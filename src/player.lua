@@ -39,7 +39,6 @@ function player:load()
     local colliderY = self.y - player.height/2 + 4 * entY
     self.collider = world:newBSGRectangleCollider(colliderX, colliderY, self.width, self.height, 5)
     self.collider:setCollisionClass('Player')
-    self.collider:setObject(self)
     self.collider:setFixedRotation(true)
     
     self.x = self.collider:getX()
@@ -110,13 +109,17 @@ function player:update(dt)
 
     if self.collider:enter('Enemy') then
         local collision_data = self.collider:getEnterCollisionData('Enemy')
-        local dx, dy = collision_data.contact:getNormal()
-        dx, dy = dx*-math.pow(10, 10), dy*-math.pow(10, 10)
-        
-        self.x = self.collider:getX() - 0.5 * entX + dx * dt
-        self.y = self.collider:getY() - 4 * entY + dy * dt
-        
-        self.collider:applyLinearImpulse(dx, dy)
+        if self.strike then
+            collision_data.collider:getBody():setPosition(3, 3)
+        else
+            local dx, dy = collision_data.contact:getNormal()
+            dx, dy = dx*-math.pow(10, 10), dy*-math.pow(10, 10)
+            
+            self.x = self.collider:getX() - 0.5 * entX + dx * dt
+            self.y = self.collider:getY() - 4 * entY + dy * dt
+            
+            self.collider:applyLinearImpulse(dx, dy)
+        end
     end
 end
 
@@ -160,7 +163,6 @@ function player:resize(entX, entY)
     local colliderX = self.x - self.width/2 + 0.5 * entX
     local colliderY = self.y - self.height/2 + 4 * entY
     self.collider = world:newBSGRectangleCollider(colliderX, colliderY, self.width, self.height, 5)
-    self.collider:setObject(self)
     self.collider:setCollisionClass('Player')
     self.collider:setFixedRotation(true)
 

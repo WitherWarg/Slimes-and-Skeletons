@@ -75,13 +75,18 @@ function sword:update(dt)
         end
     end
 
-    if strike and self.collider:enter('Enemy') then
-        local collision_data = collider:getEnterCollisionData('Enemy')
-        local dx, dy = collision_data.contact:getNormal()
-        dx, dy = dx*-math.pow(10, 10), dy*-math.pow(10, 10)
+    --[[local status, result = pcall(function()
+        if player.strike and self.collider:enter('Enemy') then
+            collision = true
+            local collision_data = collider:getEnterCollisionData('Enemy')
+            local dx, dy = collision_data.contact:getNormal()
+            dx, dy = dx*-math.pow(10, 10), dy*-math.pow(10, 10)
 
-        collision_data.collider:applyLinearImpulse(dx, dy)
-    end
+            collision_data.collider:applyLinearImpulse(dx, dy)
+        else
+            collision = false
+        end
+    end)]]
 end
 
 function sword:draw()
@@ -103,7 +108,6 @@ function sword:draw()
 
         if self.collider then
             self.collider:setCollisionClass('Sword')
-            self.collider:setObject(self)
         end
 
     elseif self.collider then

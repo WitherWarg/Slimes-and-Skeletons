@@ -44,7 +44,8 @@ function love.draw()
             player:draw()
             sword:draw()
         end
-        --world:draw()
+        
+        world:draw()
     cam:detach()
 
     local status, result = pcall(function()
