@@ -64,12 +64,15 @@ function slime:update(dt)
             self.dir = 'left'
         end
         
+        self.x = self.collider:getX() - 0.5 * entX
+        self.y = self.collider:getY() - 4 * entY
+
+        if length < 40 * (entX+entY)/2 then
+            self.animation:gotoFrame(1)
+        end
+        
         length = math.sqrt(dx*dx + dy*dy)
         self.collider:setLinearVelocity(self.spd * dx/length, self.spd * dy/length)
-
-        local vx, vy = self.collider:getLinearVelocity()
-        self.x = self.collider:getX() - 0.5 * entX + vx * dt
-        self.y = self.collider:getY() - 4 * entY + vy * dt
     else
         if self.dir == 'right' then
             self.animation = self.animations.idle_right
@@ -108,9 +111,4 @@ function slime:resize(entX, entY)
 
     self.x = self.collider:getX()
     self.y = self.collider:getY()
-end
-
-function slime:tmp()
-    slime.x = 100000000
-    slime.y = 100000000
 end

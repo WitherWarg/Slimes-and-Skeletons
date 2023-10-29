@@ -95,10 +95,11 @@ function player:update(dt)
         
         self.collider:setLinearVelocity(self.spd * dx, self.spd * dy)
 
-        local vx, vy = self.collider:getLinearVelocity()
-        self.x = self.collider:getX() - 0.5 * entX + vx * dt
-        self.y = self.collider:getY() - 4 * entY + vy * dt
     end
+    
+    local vx, vy = self.collider:getLinearVelocity()
+    self.x = self.collider:getX() - 0.5 * entX + vx * dt
+    self.y = self.collider:getY() - 4 * entY + vy * dt
     
     self.animation:update(dt)
     
@@ -109,16 +110,32 @@ function player:update(dt)
 
     if self.collider:enter('Enemy') then
         local collision_data = self.collider:getEnterCollisionData('Enemy')
+        colliders = {}
+
         if self.strike then
-            collision_data.collider:getBody():setPosition(3, 3)
-        else
+            local dx, dy = 0, 0
+            if player.dir == 'right' then dx = 1 end
+            if player.dir == 'left' then dx = -1 end
+            if player.dir == 'up' then dy = -1 end
+            if player.dir == 'down' then dy = 1 end
+
+            local length = math.sqrt(dx*dx+dy*dy)
+            dx, dy = dx/length, dy/length
+
+            local querX = self.x + player.width * dx
+            local querY = self.y + player.height * dy
+            colliders = world:queryCircleArea(querX, querY, 20, {"Enemy"})
+        end
+
+        if #colliders == 0 then
             local dx, dy = collision_data.contact:getNormal()
             dx, dy = dx*-math.pow(10, 10), dy*-math.pow(10, 10)
             
-            self.x = self.collider:getX() - 0.5 * entX + dx * dt
-            self.y = self.collider:getY() - 4 * entY + dy * dt
-            
             self.collider:applyLinearImpulse(dx, dy)
+
+            local vx, vy = self.collider:getLinearVelocity()
+            self.x = self.collider:getX() - 0.5 * entX + vx * dt
+            self.y = self.collider:getY() - 4 * entY + vy * dt
         end
     end
 end
@@ -150,7 +167,7 @@ function player:mousepressed()
         self.dir = 'right'
     end
 
-    sword:mousepressed(self.dir, self.swordType, angle)
+    sword:mousepressed(self.dir, self.swordType)
 end
 
 function player:resize(entX, entY)

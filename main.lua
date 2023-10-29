@@ -5,9 +5,11 @@ function love.load()
     require('/src/utilities/require')
     
     WIDTH, HEIGHT = love.graphics.getDimensions()
+    FPS = nil
     SX, SY = 1, 1
     entX, entY = 3 * SX, 3 * SY
     world = wf.newWorld(0, 0)
+    world:setQueryDebugDrawing(true)
     cam = camera()
 
     requireAll()
@@ -44,12 +46,12 @@ function love.draw()
             player:draw()
             sword:draw()
         end
-        
-        world:draw()
+
+        --world:draw()
     cam:detach()
 
     local status, result = pcall(function()
-        debug(collision)
+        debug(#colliders, player.x, player.y, slime.x, slime.y)
     end)
 
     if not status then
