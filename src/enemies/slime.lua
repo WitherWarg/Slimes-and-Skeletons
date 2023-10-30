@@ -2,11 +2,12 @@ slime = {}
 
 function slime:load()
     self.spd = 50
-    self.aggro = 300
+    self.aggroX = 300
+    self.aggroY = self.aggroX
     self.width = 14 * entX
     self.height = 11 * entY
-    self.x = player.x + self.aggro - 50
-    self.y = player.y + self.aggro - 50
+    self.x = player.x + self.aggroX - 50
+    self.y = player.y + self.aggroY - 50
     
     self.spriteSheet = love.graphics.newImage('sprites/characters/slime.png')
     self.frameWidth = self.spriteSheet:getWidth()/7
@@ -38,24 +39,25 @@ function slime:load()
 end
 
 function slime:update(dt)
-    local dx = player.x - self.x
-    local dy = player.y - self.y
-    local length = math.sqrt(dx*dx + dy*dy)
+    local aggroX = player.x - self.x
+    local aggroY = player.y - self.y
     local control = 1
     
+    local dx = 0
     if player.x + control > self.x and self.x > player.x - control then
         dx = 0
     else
-        dx = dx/math.abs(dx)
+        dx = aggroX/math.abs(aggroX)
     end
+    local dy = 0
     if player.y + control > self.y and self.y > player.y - control then
         dy = 0
     else
-        dy = dy/math.abs(dy)
+        dy = aggroY/math.abs(aggroY)
     end
-    
 
-    if length < self.aggro then
+    aggroX, aggroY = math.abs(aggroX), math.abs(aggroY)
+    if aggroX < self.aggroX and aggroY < self.aggroY then
         if self.x < player.x then
             self.animation = self.animations.right 
             self.dir = 'right'
@@ -67,11 +69,11 @@ function slime:update(dt)
         self.x = self.collider:getX() - 0.5 * entX
         self.y = self.collider:getY() - 4 * entY
 
-        if length < 40 * (entX+entY)/2 then
+        if aggroX < 40 * entX and aggroY < 40 * entY then
             self.animation:gotoFrame(1)
         end
         
-        length = math.sqrt(dx*dx + dy*dy)
+        local length = math.sqrt(dx*dx + dy*dy)
         self.collider:setLinearVelocity(self.spd * dx/length, self.spd * dy/length)
     else
         if self.dir == 'right' then
@@ -88,6 +90,19 @@ function slime:update(dt)
         self.prevX = self.x
         self.prevY = self.y
     end
+
+    if self.collider:enter('Sword') then
+        local collision_data = self.collider:getEnterCollisionData('Sword')
+
+        local dx, dy = collision_data.contact:getNormal()
+        dx, dy = dx*-math.pow(10, 4), dy*-math.pow(10, 4)
+        
+        self.collider:applyLinearImpulse(dx, dy)
+
+        local vx, vy = self.collider:getLinearVelocity()
+        self.x = self.collider:getX() - 0.5 * entX + vx * dt
+        self.y = self.collider:getY() - 4 * entY + vy * dt
+    end
 end
 
 function slime:draw()
@@ -95,7 +110,8 @@ function slime:draw()
 end
 
 function slime:resize(entX, entY)
-    self.aggro = 150 * (SX+SY)
+    self.aggroX = 300 * entX
+    self.aggroY = 300 * entY
     self.width = 14 * entX
     self.height = 11 * entY
     self.x = self.prevX * SX

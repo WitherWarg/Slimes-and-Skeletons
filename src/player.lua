@@ -3,20 +3,18 @@ player = {}
 function player:load()
     self.x = love.graphics.getWidth()/2
     self.y = love.graphics.getHeight()/2
-    self.spd = 400
+    self.spd = 240
     self.width = 9 * entX
     self.height = 13 * entY
     self.swordType = 'wood'
+    self.animSpd = 0.2
 
     self.spriteSheet = love.graphics.newImage('/sprites/characters/player.png')
     self.frameWidth = self.spriteSheet:getWidth()/6
     self.frameHeight = self.spriteSheet:getHeight()/10
-
     local g = anim8.newGrid(self.frameWidth, self.frameHeight, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
 
     self.animations = {}
-        self.animSpd = 0.2
-
         self.animations.down = anim8.newAnimation(g('1-6', 4), self.animSpd)
         self.animations.right = anim8.newAnimation(g('1-6', 5), self.animSpd)
         self.animations.left = anim8.newAnimation(g('1-6', 5), self.animSpd):flipH()
@@ -40,9 +38,8 @@ function player:load()
     self.collider = world:newBSGRectangleCollider(colliderX, colliderY, self.width, self.height, 5)
     self.collider:setCollisionClass('Player')
     self.collider:setFixedRotation(true)
-    
-    self.x = self.collider:getX()
-    self.y = self.collider:getY()
+
+    playerHealth:load()
 end
 
 function player:update(dt)
@@ -133,6 +130,8 @@ function player:update(dt)
             
             self.collider:applyLinearImpulse(dx, dy)
 
+            playerHealth:update()
+
             local vx, vy = self.collider:getLinearVelocity()
             self.x = self.collider:getX() - 0.5 * entX + vx * dt
             self.y = self.collider:getY() - 4 * entY + vy * dt
@@ -148,8 +147,8 @@ function player:mousepressed()
     self.strike = true
     self.strikeTimer = player.animSpd*4
 
-    local dx = love.mouse.getX() - love.graphics.getWidth() / 2 + self.x - cam.x
-    local dy = love.mouse.getY() - love.graphics.getHeight() / 2 + self.y - cam.y
+    local dx = love.mouse.getX() - love.graphics.getWidth() / 2
+    local dy = love.mouse.getY() - love.graphics.getHeight() / 2
     local angle = math.deg(math.atan2(dy, dx)) - 45
     angle = (angle + 360) % 360
 
@@ -173,6 +172,7 @@ end
 function player:resize(entX, entY)
     self.width = 9 * entX
     self.height = 13 * entY
+    self.spd = 240 * (SX+SY)/2
     self.x = self.prevX * SX
     self.y = self.prevY * SY
 

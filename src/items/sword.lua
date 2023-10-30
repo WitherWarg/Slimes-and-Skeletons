@@ -12,79 +12,66 @@ function sword:load()
 end
 
 function sword:update(dt)
-    if self.strikeTimer1 then
-        self.strikeTimer1 = self.strikeTimer1 - dt
+    if self.strike then
+        self.strike = self.strike - dt
 
-        if self.strikeTimer1 < 0 then
+        if self.strike < 0 then
             if self.dir == 'down' then
-                self.strikeTimer1 = nil
-
                 self.x = player.x + 5 * entX
                 self.y = player.y + 6 * entY
 
                 self.colliderX = player.x + player.width / 2 - self.current.width
-                self.colliderY = player.y + player.height / 2
+                self.colliderY = player.y
 
-                self.strikeTimer2 = player.animSpd
                 self.radians = math.pi / 2
-
             elseif self.dir == 'up' then
-                self.strikeTimer1 = nil
-
                 self.x = player.x - 5 * entX
                 self.y = player.y + 5 * entY
 
                 self.colliderX = player.x - player.width / 2
-                self.colliderY = player.y - player.height * 3 / 2
+                self.colliderY = player.y - self.current.height / 2
 
-                self.strikeTimer2 = player.animSpd
                 self.radians = math.pi * 3 / 2
-
             elseif self.dir == 'right' then
-                self.strikeTimer1 = nil
-
                 self.x = player.x - 8 * entX
                 self.y = player.y + 6 * entY
 
                 self.colliderX = player.x + player.width / 2
                 self.colliderY = player.y + player.height - self.current.width * 2
 
-                self.strikeTimer2 = player.animSpd
                 self.radians = math.pi
-
             else
-                self.strikeTimer1 = nil
-
                 self.x = player.x + 7 * entX
                 self.y = player.y + 6 * entY
-
+                
                 self.colliderX = player.x - player.width * 2
                 self.colliderY = player.y + player.height - self.current.width * 2
-
-                self.strikeTimer2 = player.animSpd
+                
                 self.radians = math.pi
             end
         end
     end
 
-    if self.dir and self.strikeTimer2 then
-        self.strikeTimer2 = self.strikeTimer2 - dt
-
-        if self.strikeTimer2 < 0 then        
-            self.strikeTimer2 = nil
-        end
+    if not player.strike then
+        self.strike = nil
     end
 end
 
 function sword:draw()
-    if player.strike then
-        if self.strikeTimer2 then
-            love.graphics.draw(self.current.image, self.x, self.y, self.radians, self.SX, self.SY, self.current.image:getWidth() / 2, self.current.image:getHeight())
-        end
+    if self.collider then
+        self.collider:destroy()
+        self.collider = nil
+    end
+    
+    if not self.strike then local timer end
 
-        if self.collider then
-            self.collider:destroy()
-            self.collider = nil
+    if player.strike then
+        if self.strike > 0 then timer = player.animSpd end
+
+        if self.strike < 0 and timer > 0 then
+            timer = timer - love.timer.getDelta()
+
+            love.graphics.draw(self.current.image, self.x, self.y, self.radians, self.SX, self.SY, self.current.image:getWidth() / 2, self.current.image:getHeight())
         end
 
         if self.dir == 'up' or self.dir == 'down' then
@@ -93,13 +80,7 @@ function sword:draw()
             self.collider = world:newRectangleCollider(self.colliderX, self.colliderY, self.current.height, self.current.width)
         end
 
-        if self.collider then
-            self.collider:setCollisionClass('Sword')
-        end
-
-    elseif self.collider then
-        self.collider:destroy()
-        self.collider = nil
+        self.collider:setCollisionClass('Sword')
     end
 end
 
@@ -110,7 +91,7 @@ function sword:mousepressed(dir, swordType)
 
     if dir == 'down' then
         self.colliderX = player.x - player.width / 2
-        self.colliderY = player.y + player.height / 2
+        self.colliderY = player.y
     elseif dir == 'right' then
         self.colliderX = player.x + player.width / 2
         self.colliderY = player.y - player.height + self.current.width * 2
@@ -119,10 +100,10 @@ function sword:mousepressed(dir, swordType)
         self.colliderY = player.y - player.height + self.current.width * 2
     elseif dir == 'up' then
         self.colliderX = player.x + player.width / 2
-        self.colliderY = player.y - player.height * 3 / 2
+        self.colliderY = player.y - self.current.height / 2
     end
 
-    self.strikeTimer1 = player.animSpd
+    self.strike = player.animSpd
     self.dir = dir
 end
 

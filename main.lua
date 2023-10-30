@@ -15,7 +15,7 @@ function love.load()
     requireAll()
 
     player:load()
-    slime:load()
+    --slime:load()
     sword:load()
 end
 
@@ -24,40 +24,42 @@ function love.update(dt)
         player:update(dt)
         sword:update(dt)
         world:update(dt)
-        slime:update(dt)
-        cam:lookAt(player.x, player.y)
-        
+        --slime:update(dt)
         if FPS then love.timer.sleep(1/FPS) end
     end
+
+    cam:lookAt(player.x, player.y)
+    local background = love.graphics.newImage('/maps/levels/Show Environnement.jpeg')
+    local sx = love.graphics.getWidth()/background:getWidth()
+    local sy = love.graphics.getHeight()/background:getHeight()
+    cam.x = math.max(love.graphics.getWidth()/2, math.min(cam.x, background:getWidth()*sx - love.graphics.getWidth()/2))
+    cam.y = math.max(love.graphics.getHeight()/2, math.min(cam.y, background:getHeight()*sx - love.graphics.getWidth()/2))
 end
 
 function love.draw()
-    love.graphics.setColor(hsl(103, 28, 38))
-    love.graphics.rectangle("fill", 0, 0, WIDTH*SX, HEIGHT*SY)
-
     love.graphics.reset()
     cam:attach()
-        if slime.y > player.y then
+        local background = love.graphics.newImage('/maps/levels/Show Environnement.jpeg')
+        local sx = love.graphics.getWidth()/background:getWidth()
+        local sy = love.graphics.getHeight()/background:getHeight()
+        love.graphics.draw(background, 0, 0, nil, sx, sy)
+
+        --[[if slime.y > player.y then
             player:draw()
-            sword:draw()
             slime:draw()
         else
-            slime:draw()
+            slime:draw()]]
             player:draw()
-            sword:draw()
-        end
-
+        --end
+        
+        sword:draw()
         --world:draw()
     cam:detach()
 
-    local status, result = pcall(function()
-        debug(#colliders, player.x, player.y, slime.x, slime.y)
-    end)
+    debug()
 
-    if not status then
-        love.graphics.reset()
-        love.graphics.print(result)
-    end
+    love.graphics.reset()
+    playerHealth:draw()
 end
 
 function love.resize(w, h)
@@ -66,7 +68,7 @@ function love.resize(w, h)
     
     sword:resize(SX, SY)
     player:resize(entX, entY)
-    slime:resize(entX, entY)
+    --slime:resize(entX, entY)
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
