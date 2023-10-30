@@ -1,11 +1,12 @@
 player = {}
 
 function player:load()
-    self.x = love.graphics.getWidth()/2
-    self.y = love.graphics.getHeight()/2
+    self.sx, self.sy = 3*SX, 3*SX
+    self.x = WIDTH/2
+    self.y = HEIGHT/2
     self.spd = 240
-    self.width = 9 * entX
-    self.height = 13 * entY
+    self.width = 9 * self.sx
+    self.height = 7 * self.sy
     self.swordType = 'wood'
     self.animSpd = 0.2
 
@@ -33,8 +34,8 @@ function player:load()
         self.animation = self.animations.idleDown
         self.dir = 'down'
 
-    local colliderX = self.x - player.width/2 + 0.5 * entX
-    local colliderY = self.y - player.height/2 + 4 * entY
+    local colliderX = self.x - player.width/2 + 0.5 * self.sx
+    local colliderY = self.y - player.height/2 + 7 * self.sy
     self.collider = world:newBSGRectangleCollider(colliderX, colliderY, self.width, self.height, 5)
     self.collider:setCollisionClass('Player')
     self.collider:setFixedRotation(true)
@@ -95,15 +96,10 @@ function player:update(dt)
     end
     
     local vx, vy = self.collider:getLinearVelocity()
-    self.x = self.collider:getX() - 0.5 * entX + vx * dt
-    self.y = self.collider:getY() - 4 * entY + vy * dt
+    self.x = self.collider:getX() - 0.5 * self.sx + vx * dt
+    self.y = self.collider:getY() - 7 * self.sy + vy * dt
     
     self.animation:update(dt)
-    
-    if SX == SY then
-        self.prevX = self.x
-        self.prevY = self.y
-    end
 
     if self.collider:enter('Enemy') then
         local collision_data = self.collider:getEnterCollisionData('Enemy')
@@ -133,22 +129,22 @@ function player:update(dt)
             playerHealth:update()
 
             local vx, vy = self.collider:getLinearVelocity()
-            self.x = self.collider:getX() - 0.5 * entX + vx * dt
-            self.y = self.collider:getY() - 4 * entY + vy * dt
+            self.x = self.collider:getX() - 0.5 * self.sx + vx * dt
+            self.y = self.collider:getY() - 7 * self.sy + vy * dt
         end
     end
 end
 
 function player:draw()
-    self.animation:draw(self.spriteSheet, self.x, self.y, nil, entX, entY, self.frameWidth/2, self.frameHeight/2)
+    self.animation:draw(self.spriteSheet, self.x, self.y, nil, self.sx, self.sy, self.frameWidth/2, self.frameHeight/2)
 end
 
 function player:mousepressed()
     self.strike = true
     self.strikeTimer = player.animSpd*4
 
-    local dx = love.mouse.getX() - love.graphics.getWidth() / 2
-    local dy = love.mouse.getY() - love.graphics.getHeight() / 2
+    local dx = love.mouse.getX() + self.x - WIDTH/2 - self.x
+    local dy = love.mouse.getY() + self.y - HEIGHT/2 - self.y
     local angle = math.deg(math.atan2(dy, dx)) - 45
     angle = (angle + 360) % 360
 
@@ -169,20 +165,16 @@ function player:mousepressed()
     sword:mousepressed(self.dir, self.swordType)
 end
 
-function player:resize(entX, entY)
-    self.width = 9 * entX
-    self.height = 13 * entY
-    self.spd = 240 * (SX+SY)/2
-    self.x = self.prevX * SX
-    self.y = self.prevY * SY
+function player:resize(SX, SY)
+    self.sx, self.sy = self.sx*SX, self.sy*SY
+    self.width = self.width * SX
+    self.height = self.height * SY
+    self.x, self.y = self.x * SX, self.y * SY
 
+    local colliderX = self.x - player.width/2 + 0.5 * self.sx
+    local colliderY = self.y - player.height/2 + 7 * self.sy
     self.collider:destroy()
-    local colliderX = self.x - self.width/2 + 0.5 * entX
-    local colliderY = self.y - self.height/2 + 4 * entY
     self.collider = world:newBSGRectangleCollider(colliderX, colliderY, self.width, self.height, 5)
     self.collider:setCollisionClass('Player')
     self.collider:setFixedRotation(true)
-
-    self.x = self.collider:getX()
-    self.y = self.collider:getY()
 end

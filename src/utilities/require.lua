@@ -8,7 +8,7 @@ function requireAll()
     require('/src/utilities/collisionClasses')
     require('/src/utilities/debug')
 
-    require('/src/items/hearts')
+    require('/src/items/playerHealth')
     require('/src/items/sword')
 
     require('/src/enemies/slime')

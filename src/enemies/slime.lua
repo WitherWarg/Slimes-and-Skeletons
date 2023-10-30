@@ -1,28 +1,24 @@
 slime = {}
 
 function slime:load()
+    self.sx, self.sy = player.sx, player.sy
     self.spd = 50
-    self.aggroX = 300
-    self.aggroY = self.aggroX
-    self.width = 14 * entX
-    self.height = 11 * entY
-    self.x = player.x + self.aggroX - 50
-    self.y = player.y + self.aggroY - 50
+    self.aggroX, self.aggroY = 200, 200
+    self.width = 14 * self.sx
+    self.height = 11 * self.sy
+    self.x = player.x + self.aggroX
+    self.y = player.y - self.aggroY
     
     self.spriteSheet = love.graphics.newImage('sprites/characters/slime.png')
     self.frameWidth = self.spriteSheet:getWidth()/7
     self.frameHeight = self.spriteSheet:getHeight()/5
     local g = anim8.newGrid(self.frameWidth, self.frameHeight, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
 
-    colliderX = self.x - player.width/2
-    colliderY = self.y - player.height/2
+    local colliderX = self.x - player.width/2
+    local colliderY = self.y - player.height/2
     self.collider = world:newBSGRectangleCollider(colliderX, colliderY, self.width, self.height, 10)
     self.collider:setFixedRotation(true)
-    self.collider:setObject(self)
     self.collider:setCollisionClass('Enemy')
-
-    self.x = self.collider:getX()
-    self.y = self.collider:getY()
 
     self.animations = {}
         self.animSpd = 0.2
@@ -41,20 +37,25 @@ end
 function slime:update(dt)
     local aggroX = player.x - self.x
     local aggroY = player.y - self.y
-    local control = 1
+    local control = 2
     
     local dx = 0
     if player.x + control > self.x and self.x > player.x - control then
         dx = 0
+        self.x = player.x
     else
         dx = aggroX/math.abs(aggroX)
     end
     local dy = 0
     if player.y + control > self.y and self.y > player.y - control then
         dy = 0
+        self.y = player.y
     else
         dy = aggroY/math.abs(aggroY)
     end
+
+    self.x = self.collider:getX() - 0.5 * SX
+    self.y = self.collider:getY() - 4 * SY
 
     aggroX, aggroY = math.abs(aggroX), math.abs(aggroY)
     if aggroX < self.aggroX and aggroY < self.aggroY then
@@ -66,15 +67,14 @@ function slime:update(dt)
             self.dir = 'left'
         end
         
-        self.x = self.collider:getX() - 0.5 * entX
-        self.y = self.collider:getY() - 4 * entY
-
-        if aggroX < 40 * entX and aggroY < 40 * entY then
+        if aggroX < 40 * self.sx and aggroY < 40 * self.sy then
             self.animation:gotoFrame(1)
         end
-        
-        local length = math.sqrt(dx*dx + dy*dy)
-        self.collider:setLinearVelocity(self.spd * dx/length, self.spd * dy/length)
+
+        if self.x ~= player.x or self.y ~= player.x then
+            local length = math.sqrt(dx*dx + dy*dy)
+            self.collider:setLinearVelocity(self.spd * dx/length, self.spd * dy/length)
+        end
     else
         if self.dir == 'right' then
             self.animation = self.animations.idle_right
@@ -86,45 +86,35 @@ function slime:update(dt)
 
     self.animation:update(dt)
 
-    if SX == SY then
-        self.prevX = self.x
-        self.prevY = self.y
-    end
-
     if self.collider:enter('Sword') then
         local collision_data = self.collider:getEnterCollisionData('Sword')
 
         local dx, dy = collision_data.contact:getNormal()
-        dx, dy = dx*-math.pow(10, 4), dy*-math.pow(10, 4)
+        dx, dy = dx*-math.pow(10, 5), dy*-math.pow(10, 5)
         
         self.collider:applyLinearImpulse(dx, dy)
 
         local vx, vy = self.collider:getLinearVelocity()
-        self.x = self.collider:getX() - 0.5 * entX + vx * dt
-        self.y = self.collider:getY() - 4 * entY + vy * dt
+        self.x = self.collider:getX() - 0.5 * SX + vx * dt
+        self.y = self.collider:getY() - 4 * SY + vy * dt
     end
 end
 
 function slime:draw()
-    self.animation:draw(self.spriteSheet, self.x, self.y, nil, entX, entY, self.frameWidth / 2, self.frameHeight / 2)
+    self.animation:draw(self.spriteSheet, self.x, self.y, nil, self.sx, self.sy, self.frameWidth / 2, self.frameHeight / 2)
 end
 
-function slime:resize(entX, entY)
-    self.aggroX = 300 * entX
-    self.aggroY = 300 * entY
-    self.width = 14 * entX
-    self.height = 11 * entY
-    self.x = self.prevX * SX
-    self.y = self.prevY * SY
+function slime:resize(SX, SY)
+    self.sx, self.sy = player.sx, player.sy
+    self.aggroX, self.aggroY = self.aggroX*SX, self.aggroY*SY
+    self.width = self.width * SX
+    self.height = self.height * SY
+    self.x, self.y = self.x * SX, self.y * SY
 
+    local colliderX = self.x - self.width/2
+    local colliderY = self.y - self.height/2
     self.collider:destroy()
-    colliderX = self.x - player.width/2
-    colliderY = self.y - player.height/2
     self.collider = world:newBSGRectangleCollider(colliderX, colliderY, self.width, self.height, 10)
-    self.collider:setObject(self)
     self.collider:setFixedRotation(true)
     self.collider:setCollisionClass('Enemy')
-
-    self.x = self.collider:getX()
-    self.y = self.collider:getY()
 end

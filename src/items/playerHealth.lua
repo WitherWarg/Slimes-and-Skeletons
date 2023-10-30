@@ -17,16 +17,16 @@ end
 
 function playerHealth:update()
     self.hp = self.hp - 1
-    self.animations[self.Ghp]:gotoFrame(3 - self.hp)
+    self.animations[self.hearts]:gotoFrame(3 - self.hp)
 
     if self.hp == 0 then
-        self.Ghp = self.Ghp - 1
+        self.hearts = self.hearts - 1
         self.hp = 2
     end
 end
 
 function playerHealth:draw()
     for i, animation in ipairs(self.animations) do
-        animation:draw(self.spriteSheet, love.graphics.getWidth() - 25*entX*i, 10 * entY, nil, entX, entY)
+        animation:draw(self.spriteSheet, WIDTH - 25 * player.sx * i, 10 * player.sy, nil, player.sx, player.sy)
     end
 end
