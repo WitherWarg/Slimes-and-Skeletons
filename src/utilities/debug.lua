@@ -2,7 +2,7 @@ function debug(...)
     local text = {...}
     
     if #text > 0 then
-        local font = love.graphics.setNewFont(20)
+        local font = love.graphics.newFont(20)
 
         local len = ''
         for i=1, #text do

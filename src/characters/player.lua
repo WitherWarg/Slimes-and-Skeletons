@@ -6,7 +6,7 @@ function player:load()
     self.y = HEIGHT/2
     self.spd = 240
     self.width = 9 * self.sx
-    self.height = 7 * self.sy
+    self.height = 5 * self.sy
     self.swordType = 'wood'
     self.animSpd = 0.2
 
@@ -31,28 +31,23 @@ function player:load()
         self.animations.strikeLeft = anim8.newAnimation(g('1-4', 8), self.animSpd):flipH()
         self.animations.strikeUp = anim8.newAnimation(g('1-4', 9), self.animSpd)
 
+        self.animations.die_right = anim8.newAnimation(g('1-3', 10), 0.8, 'pauseAtEnd')
+        self.animations.die_left = anim8.newAnimation(g('1-3', 10), 0.8, 'pauseAtEnd'):flipH()
+
         self.animation = self.animations.idleDown
         self.dir = 'down'
 
-    local colliderX = self.x - player.width/2 + 0.5 * self.sx
-    local colliderY = self.y - player.height/2 + 7 * self.sy
+    local colliderX = self.x - self.width/2 + 0.5 * self.sx
+    local colliderY = self.y - self.height/2 + 7 * self.sy
     self.collider = world:newBSGRectangleCollider(colliderX, colliderY, self.width, self.height, 5)
     self.collider:setCollisionClass('Player')
     self.collider:setFixedRotation(true)
 
-    playerHealth:load()
+    hearts:load()
 end
 
 function player:update(dt)
-    if self.strike then
-        self.collider:setLinearVelocity(0, 0)
-
-        self.strikeTimer = self.strikeTimer - dt
-        if self.strikeTimer <= 0 then
-            self.strike = false
-            self.strikeTimer = nil
-        end
-    else
+    if not self.strike then
         local dx,dy = 0,0
 
         if love.keyboard.isDown("right") or love.keyboard.isDown('d') then
@@ -92,47 +87,27 @@ function player:update(dt)
         end
         
         self.collider:setLinearVelocity(self.spd * dx, self.spd * dy)
-
     end
     
     local vx, vy = self.collider:getLinearVelocity()
     self.x = self.collider:getX() - 0.5 * self.sx + vx * dt
     self.y = self.collider:getY() - 7 * self.sy + vy * dt
-    
-    self.animation:update(dt)
 
     if self.collider:enter('Enemy') then
         local collision_data = self.collider:getEnterCollisionData('Enemy')
-        colliders = {}
+        local dx, dy = collision_data.contact:getNormal()
+        dx, dy = -dx*math.pow(10, 10)*SX, -dy*math.pow(10, 10)*SY
+        
+        self.collider:applyLinearImpulse(dx, dy)
+        
+        local vx, vy = self.collider:getLinearVelocity()
+        self.x = self.collider:getX() - 0.5 * self.sx + vx * dt
+        self.y = self.collider:getY() - 7 * self.sy + vy * dt
 
-        if self.strike then
-            local dx, dy = 0, 0
-            if player.dir == 'right' then dx = 1 end
-            if player.dir == 'left' then dx = -1 end
-            if player.dir == 'up' then dy = -1 end
-            if player.dir == 'down' then dy = 1 end
-
-            local length = math.sqrt(dx*dx+dy*dy)
-            dx, dy = dx/length, dy/length
-
-            local querX = self.x + player.width * dx
-            local querY = self.y + player.height * dy
-            colliders = world:queryCircleArea(querX, querY, 20, {"Enemy"})
-        end
-
-        if #colliders == 0 then
-            local dx, dy = collision_data.contact:getNormal()
-            dx, dy = dx*-math.pow(10, 10), dy*-math.pow(10, 10)
-            
-            self.collider:applyLinearImpulse(dx, dy)
-
-            playerHealth:update()
-
-            local vx, vy = self.collider:getLinearVelocity()
-            self.x = self.collider:getX() - 0.5 * self.sx + vx * dt
-            self.y = self.collider:getY() - 7 * self.sy + vy * dt
-        end
+        hearts:takeDamage()
     end
+
+    self.animation:update(dt)
 end
 
 function player:draw()
@@ -141,7 +116,7 @@ end
 
 function player:mousepressed()
     self.strike = true
-    self.strikeTimer = player.animSpd*4
+    clock.after(player.animSpd*4, function() self.strike = false end)
 
     local dx = love.mouse.getX() + self.x - WIDTH/2 - self.x
     local dy = love.mouse.getY() + self.y - HEIGHT/2 - self.y
@@ -171,10 +146,59 @@ function player:resize(SX, SY)
     self.height = self.height * SY
     self.x, self.y = self.x * SX, self.y * SY
 
-    local colliderX = self.x - player.width/2 + 0.5 * self.sx
-    local colliderY = self.y - player.height/2 + 7 * self.sy
+    local colliderX = self.x - self.width/2 + 0.5 * self.sx
+    local colliderY = self.y - self.height/2 + 7 * self.sy
     self.collider:destroy()
     self.collider = world:newBSGRectangleCollider(colliderX, colliderY, self.width, self.height, 5)
     self.collider:setCollisionClass('Player')
     self.collider:setFixedRotation(true)
+end
+
+function player:die()
+    self.dead = true
+    if self.dir == 'right' or self.dir == 'down' then
+        self.animation = self.animations.die_right
+    else
+        self.animation = self.animations.die_left
+    end
+
+    world:destroy()
+end
+
+hearts = {}
+
+function hearts:load()
+    self.hp = 2
+    self.hearts = 4
+
+    self.spriteSheet = love.graphics.newImage('/sprites/objects/hearts/animated/border/heart_edit.png')
+    self.frameWidth = self.spriteSheet:getWidth() / 3
+    self.frameHeight = self.spriteSheet:getHeight()
+    local g = anim8.newGrid(self.frameWidth, self.frameHeight, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
+
+    self.animations = {}
+    for i=1, self.hearts do
+        table.insert(self.animations, anim8.newAnimation(g('1-3', 1), player.animSpd))
+    end
+end
+
+function hearts:takeDamage()
+    self.hp = self.hp - 1
+    self.animations[self.hearts]:gotoFrame(3 - self.hp)
+
+    if self.hp == 0 then
+        self.hearts = self.hearts - 1
+        self.hp = 2
+    end
+
+    if self.hearts == 0 then
+        player:die()
+    end
+end
+
+function hearts:draw()
+    love.graphics.reset()
+    for i, animation in ipairs(self.animations) do
+        animation:draw(self.spriteSheet, WIDTH - 25 * player.sx * i, 10 * player.sy, nil, player.sx, player.sy)
+    end
 end

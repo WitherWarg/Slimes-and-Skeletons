@@ -3,7 +3,7 @@ slime = {}
 function slime:load()
     self.sx, self.sy = player.sx, player.sy
     self.spd = 50
-    self.aggroX, self.aggroY = 200, 200
+    self.aggroX, self.aggroY = 250, 250
     self.width = 14 * self.sx
     self.height = 11 * self.sy
     self.x = player.x + self.aggroX
@@ -42,14 +42,14 @@ function slime:update(dt)
     local dx = 0
     if player.x + control > self.x and self.x > player.x - control then
         dx = 0
-        self.x = player.x
+        self.x = player.x + 0.5 * player.sx
     else
         dx = aggroX/math.abs(aggroX)
     end
     local dy = 0
     if player.y + control > self.y and self.y > player.y - control then
         dy = 0
-        self.y = player.y
+        self.y = player.y + 7 * player.sy
     else
         dy = aggroY/math.abs(aggroY)
     end
@@ -90,7 +90,18 @@ function slime:update(dt)
         local collision_data = self.collider:getEnterCollisionData('Sword')
 
         local dx, dy = collision_data.contact:getNormal()
-        dx, dy = dx*-math.pow(10, 5), dy*-math.pow(10, 5)
+        dx, dy = -dx, -dy
+        if player.dir == 'down' then
+            dy = 1
+        elseif player.dir == 'up' then
+            dy = -1
+        elseif player.dir == 'left' then
+            dx = -1
+        else
+            dx = 1
+        end
+
+        dx, dy = dx*math.pow(10, 4)*SX, dy*math.pow(10, 4)*SY
         
         self.collider:applyLinearImpulse(dx, dy)
 
