@@ -13,6 +13,7 @@ function love.load()
     
     requireAll()
     
+    createCollisionClasses()
     player:load()
     slime:load()
     sword:load()
@@ -80,15 +81,12 @@ function love.draw()
     end
 
     debug()
-    hearts:draw()
+    player.hearts:draw()
 end
 
 function love.resize(w, h)
-    SX, SY = (w/WIDTH), (h/HEIGHT)
-    
-    sword:resize(SX, SY)
-    player:resize(SX, SY)
-    slime:resize(SX, SY)
+    SX, SY = w/WIDTH, h/HEIGHT
+    cam:zoom((SX+SY)/2)
 
     WIDTH, HEIGHT = w, h
 end
@@ -104,4 +102,6 @@ function love.keypressed(key)
         player.dead = false
         love.load()
     end
+
+    if key == 'h' and not player.dead then player.hearts:heal() end
 end

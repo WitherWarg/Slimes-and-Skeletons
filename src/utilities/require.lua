@@ -2,11 +2,13 @@ wf = require '/libraries/windfield'
 anim8 = require '/libraries/anim8'
 sti = require '/libraries/sti'
 camera = require '/libraries/camera'
-hsl = require '/src/utilities/hsl'
 clock = require '/libraries/timer'
+flux = require '/libraries/flux'
+
+hsl = require '/src/utilities/hsl'
+createCollisionClasses = require '/src/utilities/collisionClasses'
 
 function requireAll()
-    require('/src/utilities/collisionClasses')
     require('/src/utilities/debug')
 
     require('/src/items/sword')
