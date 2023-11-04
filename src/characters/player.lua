@@ -196,7 +196,7 @@ end
 
 function player.hearts:draw()
     for i, animation in ipairs(self.animations) do
-        animation:draw(self.spriteSheet, WIDTH - 50 - (self.frameWidth+5)*(i-1)*2, 20, nil, 2, 2)
+        animation:draw(self.spriteSheet, (self.frameWidth+5)*(i-1)*2 + 600, 20, nil, 2, 2)
     end
 end
 
