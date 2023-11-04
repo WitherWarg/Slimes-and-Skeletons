@@ -8,10 +8,12 @@ flux = require '/libraries/flux'
 hsl = require '/src/utilities/hsl'
 createCollisionClasses = require '/src/utilities/collisionClasses'
 
+
 function requireAll()
     require('/src/utilities/debug')
-
+    
     require('/src/items/sword')
+    
     require('/src/characters/slime')
     require('/src/characters/player')
 end

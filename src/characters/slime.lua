@@ -1,130 +1,150 @@
-slime = {}
+slimes = {}
 
-function slime:load()
-    self.sx, self.sy = player.sx, player.sy
-    self.aggro = 250
+function newSlime(x, y)
+    slime = {}
 
-    self.x = player.x + self.aggro
-    self.y = player.y - self.aggro
-    self.spd = player.spd/4
+    slime.sx, slime.sy = player.sx, player.sy
+    slime.aggro = 250
 
-    self.width = 14 * self.sx
-    self.height = 11 * self.sy
+    slime.x = x or player.x + slime.aggro
+    slime.y = y or player.y - slime.aggro
+    slime.spd = player.spd/4
+
+    slime.width = 14 * slime.sx
+    slime.height = 11 * slime.sy
     
-    self.hp = 4
-    self.dead = false
+    slime.hp = 4
+    slime.dead = false
 
-    self.spriteSheet = love.graphics.newImage('sprites/characters/slime.png')
-    self.frameWidth = self.spriteSheet:getWidth()/7
-    self.frameHeight = self.spriteSheet:getHeight()/5
-    local g = anim8.newGrid(self.frameWidth, self.frameHeight, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
+    slime.spriteSheet = love.graphics.newImage('sprites/characters/slime.png')
+    slime.frameWidth = slime.spriteSheet:getWidth()/7
+    slime.frameHeight = slime.spriteSheet:getHeight()/5
+    local g = anim8.newGrid(slime.frameWidth, slime.frameHeight, slime.spriteSheet:getWidth(), slime.spriteSheet:getHeight())
 
-    local colliderX = self.x - player.width/2
-    local colliderY = self.y - player.height/2
-    self.collider = world:newBSGRectangleCollider(colliderX, colliderY, self.width, self.height, 10)
-    self.collider:setFixedRotation(true)
-    self.collider:setCollisionClass('Enemy')
+    local colliderX = slime.x - player.width/2
+    local colliderY = slime.y - player.height/2
+    slime.collider = world:newBSGRectangleCollider(colliderX, colliderY, slime.width, slime.height, 10)
+    slime.collider:setFixedRotation(true)
+    slime.collider:setCollisionClass('Enemy')
 
-    self.animations = {}
-        self.animSpd = 0.2
-        self.animations.timer = 0
+    slime.animations = {}
+        slime.animSpd = 0.2
+        slime.animations.timer = 0
 
-        self.animations.right = anim8.newAnimation(g('1-7', 3), self.animSpd)
-        self.animations.left = anim8.newAnimation(g('1-7', 3), self.animSpd):flipH()
+        slime.animations.right = anim8.newAnimation(g('1-7', 3), slime.animSpd)
+        slime.animations.left = anim8.newAnimation(g('1-7', 3), slime.animSpd):flipH()
 
-        self.animations.idle_right = anim8.newAnimation(g('1-4', 1), self.animSpd)
-        self.animations.idle_left = anim8.newAnimation(g('1-4', 1), self.animSpd):flipH()
+        slime.animations.idle_right = anim8.newAnimation(g('1-4', 1), slime.animSpd)
+        slime.animations.idle_left = anim8.newAnimation(g('1-4', 1), slime.animSpd):flipH()
 
-        self.animations.die_right = anim8.newAnimation(g('1-5', 5), 0.5, 'pauseAtEnd')
-        self.animations.die_left =  anim8.newAnimation(g('1-5', 5), 0.5, 'pauseAtEnd'):flipH()
+        slime.animations.die_right = anim8.newAnimation(g('1-5', 5), 0.5, 'pauseAtEnd')
+        slime.animations.die_left =  anim8.newAnimation(g('1-5', 5), 0.5, 'pauseAtEnd'):flipH()
     
-    self.animation = self.animations.idle_left
-    self.dir = 'left'
+    slime.animation = slime.animations.idle_left
+    slime.dir = 'left'
+
+    table.insert(slimes, slime)
 end
 
-function slime:update(dt)
-    if not self.dead then
-        local dx = player.x - self.x
-        local dy = player.y - self.y
-        local length = math.sqrt(dx*dx+dy*dy)
-        local control = 4/9
-        
-        if player.x + control > self.x and self.x > player.x - control then
-            dx = 0
-            self.x = player.x + player.cx * player.sx
-        else
-            dx = dx/math.abs(dx)
-        end
-        if player.y + control > self.y and self.y > player.y - control then
-            dy = 0
-            self.y = player.y + player.cy * player.sy
-        else
-            dy = dy/math.abs(dy)
-        end
+function slimes:update(dt)
+    if #self == 0 then return end
 
-        self.x = self.collider:getX() - 0.5 * SX
-        self.y = self.collider:getY() - 4 * SY
+    for i, slime in ipairs(self) do
 
-        if length < self.aggro then
-            if self.x < player.x then
-                self.animation = self.animations.right 
-                self.dir = 'right'
-            else
-                self.animation = self.animations.left
-                self.dir = 'left'
-            end
-            
-            if length < math.sqrt(3200) then
-                self.animation:gotoFrame(1)
-            end
+    if slime.dead and slime.animation.position == 5 then
+        slime = nil
+        table.remove(slimes, i)
+        break
+    end
+    
+    slime.animation:update(dt)
 
-            length = math.sqrt(dx*dx + dy*dy)
-            self.collider:setLinearVelocity(self.spd * dx/length, self.spd * dy/length)
-        else
-            if self.dir == 'right' then
-                self.animation = self.animations.idle_right
-            else
-                self.animation = self.animations.idle_left
-            end
-            self.collider:setLinearVelocity(0, 0)
-        end
+    if slime.dead then break end
 
-        if self.collider:enter('Sword') then
-            local collision_data = self.collider:getEnterCollisionData('Sword')
-
-            local dx, dy = collision_data.contact:getNormal()
-            dx, dy = -dx, -dy
-            if player.dir == 'down' then
-                dy = 1
-            elseif player.dir == 'up' then
-                dy = -1
-            elseif player.dir == 'left' then
-                dx = -1
-            else
-                dx = 1
-            end
-
-            dx, dy = dx*math.pow(10, 4)*SX, dy*math.pow(10, 4)*SY
-            
-            self.collider:applyLinearImpulse(dx, dy)
-            
-            self.hp = self.hp - 1/2
-            if self.hp == 0 then
-                self:die()
-            end
-        end
+    local dx = player.x - slime.x
+    local dy = player.y - slime.y
+    local length = math.sqrt(dx*dx+dy*dy)
+    local control = 4/9
+    
+    if player.x + control > slime.x and slime.x > player.x - control then
+        dx = 0
+        slime.x = player.x + player.cx * player.sx
+    else
+        dx = dx/math.abs(dx)
+    end
+    if player.y + control > slime.y and slime.y > player.y - control then
+        dy = 0
+        slime.y = player.y + player.cy * player.sy
+    else
+        dy = dy/math.abs(dy)
     end
 
-    self.animation:update(dt)
+    slime.x = slime.collider:getX() - 0.5 * SX
+    slime.y = slime.collider:getY() - 4 * SY
+
+    if length < slime.aggro then
+        if slime.x < player.x then
+            slime.animation = slime.animations.right 
+            slime.dir = 'right'
+        else
+            slime.animation = slime.animations.left
+            slime.dir = 'left'
+        end
+        
+        if length < math.sqrt(3200) then
+            slime.animation:gotoFrame(1)
+        end
+
+        length = math.sqrt(dx*dx + dy*dy)
+        slime.collider:setLinearVelocity(slime.spd * dx/length, slime.spd * dy/length)
+    else
+        if slime.dir == 'right' then
+            slime.animation = slime.animations.idle_right
+        else
+            slime.animation = slime.animations.idle_left
+        end
+        slime.collider:setLinearVelocity(0, 0)
+    end
+
+    if slime.collider:enter('Sword') then
+        local collision_data = slime.collider:getEnterCollisionData('Sword')
+
+        local dx, dy = collision_data.contact:getNormal()
+        dx, dy = -dx, -dy
+        if player.dir == 'down' then
+            dy = 1
+        elseif player.dir == 'up' then
+            dy = -1
+        elseif player.dir == 'left' then
+            dx = -1
+        else
+            dx = 1
+        end
+
+        dx, dy = dx*math.pow(10, 4)*SX, dy*math.pow(10, 4)*SY
+        
+        slime.collider:applyLinearImpulse(dx, dy)
+        
+        slime.hp = slime.hp - 1/2
+        if slime.hp == 0 then
+            killSlime(slime)
+        end
+    end
+    end
 end
 
-function slime:draw()
-    if not (self.dead and self.animation.position == 5) then self.animation:draw(self.spriteSheet, self.x, self.y, nil, self.sx, self.sy, self.frameWidth / 2, self.frameHeight / 2) end
+function slimes:draw()
+    if #slimes == 0 then return end
+    
+    for _, slime in ipairs(self) do
+        if slime.dead and slime.animation.position == 5 then break end
+        slime.animation:draw(slime.spriteSheet, slime.x, slime.y, nil, slime.sx, slime.sy, slime.frameWidth / 2, slime.frameHeight / 2)
+    end
 end
 
-function slime:die()
-    self.dead = true
-    self.collider:destroy()
-    if self.dir == 'right' then self.animation = self.animations.die_right
-    else self.animation = self.animations.die_left end
+function killSlime(slime)
+    slime.dead = true
+    slime.collider:destroy()
+    if slime.dir == 'right' then slime.animation = slime.animations.die_right
+    else slime.animation = slime.animations.die_left end
 end

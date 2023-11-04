@@ -52,6 +52,14 @@ function player:load()
 end
 
 function player:update(dt)
+    if pause then return end
+
+    if self.dead and self.animation.position == 3 then return end
+
+    self.animation:update(dt)
+
+    if self.dead then return end
+
     if self.strike then
         self.collider:setLinearVelocity(0,0)
     else
@@ -108,8 +116,6 @@ function player:update(dt)
 
         self.hearts:takeDamage()
     end
-
-    self.animation:update(dt)
 end
 
 function player:draw()
@@ -153,6 +159,7 @@ function player:die()
     end
 
     world:destroy()
+    for i in ipairs(slimes) do table.remove(slimes, i) end
 end
 
 player.hearts = {}
@@ -160,6 +167,7 @@ player.hearts = {}
 function player.hearts:load()
     self.hp = 2
     self.hearts = 4
+    self.maxHearts = self.hearts
 
     self.spriteSheet = love.graphics.newImage('/sprites/objects/hearts/animated/border/heart_edit.png')
     self.frameWidth = self.spriteSheet:getWidth() / 3
@@ -188,8 +196,7 @@ end
 
 function player.hearts:draw()
     for i, animation in ipairs(self.animations) do
-        local x = 2*(self.frameWidth+6)*(i-1)+20
-        animation:draw(self.spriteSheet, x, 20, nil, -2, 2, -x+WIDTH/2)
+        animation:draw(self.spriteSheet, WIDTH - 50 - (self.frameWidth+5)*(i-1)*2, 20, nil, 2, 2)
     end
 end
 
