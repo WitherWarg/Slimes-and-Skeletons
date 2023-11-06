@@ -26,6 +26,7 @@ function newSlime(x, y)
     slime.collider = world:newBSGRectangleCollider(colliderX, colliderY, slime.width, slime.height, 10)
     slime.collider:setFixedRotation(true)
     slime.collider:setCollisionClass('Enemy')
+    slime.collider:setObject(slime)
 
     slime.animations = {}
         slime.animSpd = 0.2
@@ -52,14 +53,15 @@ function slimes:update(dt)
     for i, slime in ipairs(self) do
 
     if slime.dead and slime.animation.position == 5 then
+        slime.collider:destroy()
         slime = nil
         table.remove(slimes, i)
-        break
+        goto continue
     end
     
     slime.animation:update(dt)
 
-    if slime.dead then break end
+    if slime.dead then goto continue end
 
     local dx = player.x - slime.x
     local dy = player.y - slime.y
@@ -130,6 +132,8 @@ function slimes:update(dt)
             killSlime(slime)
         end
     end
+
+    ::continue::
     end
 end
 
@@ -137,14 +141,15 @@ function slimes:draw()
     if #slimes == 0 then return end
     
     for _, slime in ipairs(self) do
-        if slime.dead and slime.animation.position == 5 then break end
+        if slime.dead and slime.animation.position == 5 then goto continue end
         slime.animation:draw(slime.spriteSheet, slime.x, slime.y, nil, slime.sx, slime.sy, slime.frameWidth / 2, slime.frameHeight / 2)
+        ::continue::
     end
 end
 
 function killSlime(slime)
     slime.dead = true
-    slime.collider:destroy()
+    slime.collider:setType('static')
     if slime.dir == 'right' then slime.animation = slime.animations.die_right
     else slime.animation = slime.animations.die_left end
 end

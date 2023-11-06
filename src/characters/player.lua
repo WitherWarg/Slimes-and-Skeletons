@@ -109,6 +109,9 @@ function player:update(dt)
 
     if self.collider:enter('Enemy') then
         local collision_data = self.collider:getEnterCollisionData('Enemy')
+        local enemy = collision_data.collider:getObject()
+        if enemy.dead then return end
+
         local dx, dy = collision_data.contact:getNormal()
         dx, dy = -dx*math.pow(10, 10), -dy*math.pow(10, 10)
             
