@@ -2,7 +2,6 @@ function love.load()
     require('/src/utilities/require')
 
     love.graphics.setDefaultFilter("nearest", "nearest")
-    math.randomseed(os.time())
     
     world = wf.newWorld(0, 0)
     world:setQueryDebugDrawing(true)
@@ -19,16 +18,18 @@ function love.load()
 end
 
 function love.update(dt)
-    if not player.dead and not pause then
-        world:update(dt)
-        slimes:update(dt)
-        sword:update(dt)
+    if not pause then
+        if not player.dead then
+            world:update(dt)
+            sword:update(dt)
+            if FPS then love.timer.sleep(1/FPS) end
+        end
+        
         clock.update(dt)
-        if FPS then love.timer.sleep(1/FPS) end
+        Slime:update(dt)
+        player:update(dt)
+        cam:lookAt(player.x, player.y)
     end
-    
-    player:update(dt)
-    cam:lookAt(player.x, player.y)
 end
 
 function love.draw()
@@ -36,13 +37,13 @@ function love.draw()
         love.graphics.setColor(hsl(0, 0, 100))
     end
 
+    -- Space for the map
     love.graphics.setColor(hsl(140, 90, 20))
     love.graphics.rectangle("fill", 0, 0, WIDTH, HEIGHT)
 
     cam:attach()
     if player.dead then
         reset()
-        
         player:draw()
 
         if player.animation.position == 3 then
@@ -66,7 +67,7 @@ function love.draw()
     else
         reset()
 
-        slimes:draw()
+        Slime:draw()
         player:draw()
         sword:draw()
         --world:draw()
@@ -74,8 +75,6 @@ function love.draw()
     cam:detach()
 
     love.graphics.scale(SX, SY)
-    reset()
-    debug()
     reset()
     player.hearts:draw()
 end
@@ -92,14 +91,13 @@ function love.mousepressed(x, y, button, istouch, presses)
 end
 
 function love.keypressed(key)
-    if key == 'p' or key == 'escape' then pause = not pause end
+    if player.dead then
+        if key == 'space' and player.animation.position == 3 then gameStart() end
+    else
+        if key == 'p' or key == 'escape' then pause = not pause end
 
-    if key == 'space' and player.dead and player.animation.position == 3 then
-        player.dead = false
-        love.load()
+        if key == 'h' then player.hearts:heal() end
+
+        if key == 'n' then Slime.new(20, 20) end
     end
-
-    if key == 'h' and not player.dead then player.hearts:heal() end
-
-    if key == 'n' then newSlime(0,0) end
 end

@@ -1,13 +1,13 @@
 player = {}
 
 function player:load()
-    self.sx, self.sy = 3, 3
+    self.scale = 3
     self.x = WIDTH/2
     self.y = HEIGHT/2
     self.spd = 240
 
-    self.width = 7 * self.sx
-    self.height = 5 * self.sy
+    self.width = 7 * self.scale
+    self.height = 5 * self.scale
 
     
     self.spriteSheet = love.graphics.newImage('/sprites/characters/player.png')
@@ -39,8 +39,8 @@ function player:load()
         self.animation = self.animations.idleDown
         self.dir = 'down'
 
-    self.cx = 0.5 * self.sx
-    self.cy = 6 * self.sy
+    self.cx = 0.5 * self.scale
+    self.cy = 6 * self.scale
     local colliderX = self.x - self.width/2 + self.cx
     local colliderY = self.y - self.height/2 + self.cy
 
@@ -52,8 +52,6 @@ function player:load()
 end
 
 function player:update(dt)
-    if pause then return end
-
     if self.dead and self.animation.position == 3 then return end
 
     self.animation:update(dt)
@@ -103,9 +101,6 @@ function player:update(dt)
         
         self.collider:setLinearVelocity(self.spd * dx, self.spd * dy)
     end
-    
-    self.x = self.collider:getX() - self.cx
-    self.y = self.collider:getY() - self.cy
 
     if self.collider:enter('Enemy') then
         local collision_data = self.collider:getEnterCollisionData('Enemy')
@@ -113,16 +108,34 @@ function player:update(dt)
         if enemy.dead then return end
 
         local dx, dy = collision_data.contact:getNormal()
-        dx, dy = -dx*math.pow(10, 10), -dy*math.pow(10, 10)
-            
+        local scalingFactor = -10000
+        
+        --[[local x, y = (dx + self.x)/2, (dy + self.y)/2
+        local dist = math.sqrt(dx + self.x - x, dy + self.y - y)
+        local colliders = world:queryCircleArea(x, y, dist)
+        if #colliders > 0 then
+            for _, collider in ipairs(colliders) do
+                local tmpDist = math.sqrt(collider:getX() - x, collider:getY() - y)
+                if tmpDist < dist then
+                    dist = tmpDist
+                    local dx, dy = collider:getX(), collider:getY()
+                end
+            end
+        end]]
+
+        dx, dy = dx*scalingFactor, dy*scalingFactor
         self.collider:applyLinearImpulse(dx, dy)
 
         self.hearts:takeDamage()
+        if self.dead then return end
     end
+
+    self.x = self.collider:getX() - self.cx
+    self.y = self.collider:getY() - self.cy
 end
 
 function player:draw()
-    self.animation:draw(self.spriteSheet, self.x, self.y, nil, self.sx, self.sy, self.frameWidth/2, self.frameHeight/2)
+    self.animation:draw(self.spriteSheet, self.x, self.y, nil, self.scale, self.scale, self.frameWidth/2, self.frameHeight/2)
 end
 
 function player:mousepressed()
@@ -162,7 +175,7 @@ function player:die()
     end
 
     world:destroy()
-    for i in ipairs(slimes) do table.remove(slimes, i) end
+    for i=#Slime, 1, -1 do table.remove(Slime, i) end
 end
 
 player.hearts = {}
