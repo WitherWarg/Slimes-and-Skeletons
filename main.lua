@@ -42,7 +42,7 @@ function love.update(dt)
 end
 
 function love.draw()
-    function reset()
+    local function reset()
         love.graphics.setColor(hsl(0, 0, 100))
     end
 
@@ -78,7 +78,7 @@ function love.draw()
 
         Enemy:draw()
         player:draw()
-        --world:draw()
+        world:draw()
     end
     cam:detach()
 

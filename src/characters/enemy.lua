@@ -1,7 +1,5 @@
 --[[
-    frameData = {
-        width,
-        height,
+    local frameData = {
         path,
         columns,
         rows,
@@ -9,12 +7,15 @@
             name = { frames, row, animSpd, flipH, mode }
         }
     }
+
+    local colliderData = { width, height, cut }
 ]]
+
 
 Enemy = {}
 
 
-function Enemy.new(x, y, dir, frameData, colliderCut)
+function Enemy.new(x, y, dir, frameData, colliderData)
     local enemy = {}
 
     enemy.scale = player.scale
@@ -25,8 +26,8 @@ function Enemy.new(x, y, dir, frameData, colliderCut)
     enemy.y = y or player.y - enemy.aggro
     enemy.spd = player.spd / 4
 
-    enemy.width = frameData.width * enemy.scale
-    enemy.height = frameData.height * enemy.scale
+    enemy.width = colliderData.width * enemy.scale
+    enemy.height = colliderData.height * enemy.scale
 
 
     enemy.spriteSheet = love.graphics.newImage(frameData.path)
@@ -34,7 +35,7 @@ function Enemy.new(x, y, dir, frameData, colliderCut)
     enemy.frameHeight = enemy.spriteSheet:getHeight() / frameData.rows
     local g = anim8.newGrid(enemy.frameWidth, enemy.frameHeight, enemy.spriteSheet:getWidth(), enemy.spriteSheet:getHeight())
 
-    enemy.collider = world:newBSGRectangleCollider(enemy.x, enemy.y, enemy.width, enemy.height, colliderCut)
+    enemy.collider = world:newBSGRectangleCollider(enemy.x, enemy.y, enemy.width, enemy.height, colliderData.cut)
     enemy.collider:setFixedRotation(true)
     enemy.collider:setCollisionClass('Enemy')
     enemy.collider:setObject(enemy)
@@ -57,10 +58,14 @@ function Enemy:update(dt)
         
         local bool = enemy.hp == 0 and enemy.animation.position == 5
         if player.dead or bool then
-            if enemy.collider then enemy.collider:destroy() end
-            enemy.collider = nil
-            enemy.tween:stop()
-            enemy.tween = nil
+            if enemy.collider then
+                enemy.collider:destroy()
+                enemy.collider = nil
+            end
+            if enemy.tween then
+                enemy.tween:stop()
+                enemy.tween = nil
+            end
             enemy = nil
             table.remove(Enemy, i)
             goto continue
@@ -100,7 +105,7 @@ function Enemy:update(dt)
                     else enemy.animation = enemy.animations.strikeLeft end
                 end)
 
-                enemy.tween = flux.to(enemy, enemy.animation.intervals[6], {x = targetX, y = targetY}):delay(enemy.animation.intervals[3]):onupdate(function()
+                enemy.tween = flux.to(enemy, enemy.animation.intervals[5], {x = targetX, y = targetY}):delay(enemy.animation.intervals[2]):onupdate(function()
                     enemy.collider:setPosition(enemy.x, enemy.y)
                 end):oncomplete(function()
                     strikeExecuted = false
@@ -138,8 +143,6 @@ end
 
 function newSlime(x, y, dir)
     local frameData = {
-        width = 14,
-        height = 11,
         path = '/sprites/characters/slime.png',
         columns = 7,
         rows = 5,
@@ -161,13 +164,13 @@ function newSlime(x, y, dir)
         }
     }
 
-    Enemy.new(x, y, dir, frameData, 10)
+    local colliderData = { width = 14, height = 11, cut = 10 }
+
+    Enemy.new(x, y, dir, frameData, colliderData)
 end
 
 function newSkeleton(x, y, dir)
     local frameData = {
-        width = 8,
-        height = 4,
         path = '/sprites/characters/skeleton.png',
         columns = 6,
         rows = 5,
@@ -189,5 +192,7 @@ function newSkeleton(x, y, dir)
         }
     }
 
-    Enemy.new(x, y, dir, frameData, 5)
+    local colliderData = { width = 8, height = 4, cut = 5 }
+
+    Enemy.new(x, y, dir, frameData, colliderData)
 end

@@ -47,7 +47,13 @@ end
 function player:update(dt)
     self.dead = self.hearts.hearts == 0
 
-    if self.dead and self.animation.position == 3 then return end
+    if self.dead and self.animation.position == 3 then
+        if world then
+            world:destroy()
+            world = nil
+        end
+        return
+    end
 
     self.animation:update(dt)
 
@@ -58,9 +64,9 @@ function player:update(dt)
             self.animation = self.animations.dieLeft
         end
         
-        if world then
-            world:destroy()
-            world = nil
+        if player.collider then
+            player.collider:destroy()
+            player.collider = nil
         end
         return
     end
@@ -113,10 +119,10 @@ function player:update(dt)
         local enemy = collision_data.collider:getObject()
         if enemy.dead then return end
 
-        local dx, dy = collision_data.contact:getNormal()
+        dx, dy = collision_data.contact:getNormal()
         local scalingFactor = -math.pow(10, 6)
 
-        dx, dy = dx*scalingFactor, dy*scalingFactor
+        local dx, dy = dx*scalingFactor, dy*scalingFactor
         self.collider:applyLinearImpulse(dx, dy)
 
         self.hearts:damage()
