@@ -11,10 +11,18 @@ function love.load()
     cam = camera()
     
     requireAll()
-    
+
     createCollisionClasses()
     player:load()
     sword:load()
+
+    function printTable(t, check)
+        check = check or true
+        for key, value in pairs(t) do
+            if type(value) == 'table' and check then printTable(value) end
+            print(key, value)
+        end
+    end
 end
 
 function love.update(dt)
@@ -22,12 +30,13 @@ function love.update(dt)
         if not player.dead then
             world:update(dt)
             sword:update(dt)
+            flux.update(dt)
             if FPS then love.timer.sleep(1/FPS) end
         end
         
-        clock.update(dt)
-        Slime:update(dt)
+        Enemy:update(dt)
         player:update(dt)
+        clock.update(dt)
         cam:lookAt(player.x, player.y)
     end
 end
@@ -67,9 +76,8 @@ function love.draw()
     else
         reset()
 
-        Slime:draw()
+        Enemy:draw()
         player:draw()
-        sword:draw()
         --world:draw()
     end
     cam:detach()
@@ -98,6 +106,6 @@ function love.keypressed(key)
 
         if key == 'h' then player.hearts:heal() end
 
-        if key == 'n' then Slime.new(20, 20) end
+        if key == 'n' then newSkeleton() end
     end
 end

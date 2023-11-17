@@ -15,36 +15,29 @@ function player:load()
     self.frameHeight = self.spriteSheet:getHeight()/10
     local g = anim8.newGrid(self.frameWidth, self.frameHeight, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
     
-    self.animations = {}
-        self.animSpd = 0.2
-        
-        self.animations.down = anim8.newAnimation(g('1-6', 4), self.animSpd)
-        self.animations.right = anim8.newAnimation(g('1-6', 5), self.animSpd)
-        self.animations.left = anim8.newAnimation(g('1-6', 5), self.animSpd):flipH()
-        self.animations.up = anim8.newAnimation(g('1-6', 6), self.animSpd)
+    self.animations = {}        
+        self.animations.down = anim8.newAnimation(g('1-6', 4), 0.2)
+        self.animations.right = anim8.newAnimation(g('1-6', 5), 0.2)
+        self.animations.left = anim8.newAnimation(g('1-6', 5), 0.2):flipH()
+        self.animations.up = anim8.newAnimation(g('1-6', 6), 0.2)
 
-        self.animations.idleDown = anim8.newAnimation(g('1-6', 1), self.animSpd)
-        self.animations.idleRight = anim8.newAnimation(g('1-6', 2), self.animSpd)
-        self.animations.idleLeft = anim8.newAnimation(g('1-6', 2), self.animSpd):flipH()
-        self.animations.idleUp = anim8.newAnimation(g('1-6', 3), self.animSpd)
+        self.animations.idleDown = anim8.newAnimation(g('1-6', 1), 0.2)
+        self.animations.idleRight = anim8.newAnimation(g('1-6', 2), 0.2)
+        self.animations.idleLeft = anim8.newAnimation(g('1-6', 2), 0.2):flipH()
+        self.animations.idleUp = anim8.newAnimation(g('1-6', 3), 0.2)
 
-        self.animations.strikeDown = anim8.newAnimation(g('1-4', 7), self.animSpd)
-        self.animations.strikeRight = anim8.newAnimation(g('1-4', 8), self.animSpd)
-        self.animations.strikeLeft = anim8.newAnimation(g('1-4', 8), self.animSpd):flipH()
-        self.animations.strikeUp = anim8.newAnimation(g('1-4', 9), self.animSpd)
+        self.animations.strikeDown = anim8.newAnimation(g('1-4', 7), 0.2)
+        self.animations.strikeRight = anim8.newAnimation(g('1-4', 8), 0.2)
+        self.animations.strikeLeft = anim8.newAnimation(g('1-4', 8), 0.2):flipH()
+        self.animations.strikeUp = anim8.newAnimation(g('1-4', 9), 0.2)
 
-        self.animations.die_right = anim8.newAnimation(g('1-3', 10), 0.8, 'pauseAtEnd')
-        self.animations.die_left = anim8.newAnimation(g('1-3', 10), 0.8, 'pauseAtEnd'):flipH()
+        self.animations.dieRight = anim8.newAnimation(g('1-3', 10), 0.8, 'pauseAtEnd')
+        self.animations.dieLeft = anim8.newAnimation(g('1-3', 10), 0.8, 'pauseAtEnd'):flipH()
 
         self.animation = self.animations.idleDown
         self.dir = 'down'
 
-    self.cx = 0.5 * self.scale
-    self.cy = 6 * self.scale
-    local colliderX = self.x - self.width/2 + self.cx
-    local colliderY = self.y - self.height/2 + self.cy
-
-    self.collider = world:newBSGRectangleCollider(colliderX, colliderY, self.width, self.height, 5)
+    self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, 5)
     self.collider:setCollisionClass('Player')
     self.collider:setFixedRotation(true)
 
@@ -52,14 +45,27 @@ function player:load()
 end
 
 function player:update(dt)
+    self.dead = self.hearts.hearts == 0
+
     if self.dead and self.animation.position == 3 then return end
 
     self.animation:update(dt)
 
-    if self.dead then return end
+    if self.dead then
+        if self.dir == 'right' or self.dir == 'down' then
+            self.animation = self.animations.dieRight
+        else
+            self.animation = self.animations.dieLeft
+        end
+        
+        if world then
+            world:destroy()
+            world = nil
+        end
+        return
+    end
 
-    if self.strike then
-        self.collider:setLinearVelocity(0,0)
+    if self.strike then self.collider:setLinearVelocity(0,0)
     else
         local dx,dy = 0,0
 
@@ -108,30 +114,16 @@ function player:update(dt)
         if enemy.dead then return end
 
         local dx, dy = collision_data.contact:getNormal()
-        local scalingFactor = -10000
-        
-        --[[local x, y = (dx + self.x)/2, (dy + self.y)/2
-        local dist = math.sqrt(dx + self.x - x, dy + self.y - y)
-        local colliders = world:queryCircleArea(x, y, dist)
-        if #colliders > 0 then
-            for _, collider in ipairs(colliders) do
-                local tmpDist = math.sqrt(collider:getX() - x, collider:getY() - y)
-                if tmpDist < dist then
-                    dist = tmpDist
-                    local dx, dy = collider:getX(), collider:getY()
-                end
-            end
-        end]]
+        local scalingFactor = -math.pow(10, 6)
 
         dx, dy = dx*scalingFactor, dy*scalingFactor
         self.collider:applyLinearImpulse(dx, dy)
 
-        self.hearts:takeDamage()
-        if self.dead then return end
+        self.hearts:damage()
     end
 
-    self.x = self.collider:getX() - self.cx
-    self.y = self.collider:getY() - self.cy
+    self.x = self.collider:getX()
+    self.y = self.collider:getY()
 end
 
 function player:draw()
@@ -140,13 +132,12 @@ end
 
 function player:mousepressed()
     self.strike = true
-    clock.after(player.animSpd*4, function() self.strike = false end)
-
-    local dx = love.mouse.getX() + self.x - WIDTH/2 - self.x
-    local dy = love.mouse.getY() + self.y - HEIGHT/2 - self.y
+    
+    local dx = love.mouse.getX() - WIDTH/2
+    local dy = love.mouse.getY() - HEIGHT/2
     local angle = math.deg(math.atan2(dy, dx)) - 45
     angle = (angle + 360) % 360
-
+    
     if 0 <= angle and angle < 90 then
         self.animation = self.animations.strikeDown
         self.dir = 'down'
@@ -160,22 +151,11 @@ function player:mousepressed()
         self.animation = self.animations.strikeRight
         self.dir = 'right'
     end
-
+    
     self.animation:gotoFrame(1)
-
+    
+    clock.after(self.animation.intervals[#self.animation.frames], function() self.strike = false end)
     sword:mousepressed(self.dir)
-end
-
-function player:die()
-    self.dead = true
-    if self.dir == 'right' or self.dir == 'down' then
-        self.animation = self.animations.die_right
-    else
-        self.animation = self.animations.die_left
-    end
-
-    world:destroy()
-    for i=#Slime, 1, -1 do table.remove(Slime, i) end
 end
 
 player.hearts = {}
@@ -192,21 +172,17 @@ function player.hearts:load()
 
     self.animations = {}
     for i=1, self.hearts do
-        table.insert(self.animations, anim8.newAnimation(g('1-3', 1), player.animSpd))
+        table.insert(self.animations, anim8.newAnimation(g('1-3', 1), 0.2))
     end
 end
 
-function player.hearts:takeDamage()
+function player.hearts:damage()
     self.hp = self.hp - 1
     self.animations[self.hearts]:gotoFrame(3 - self.hp)
-
+    
     if self.hp == 0 then
         self.hearts = self.hearts - 1
         self.hp = 2
-    end
-
-    if self.hearts == 0 then
-        player:die()
     end
 end
 

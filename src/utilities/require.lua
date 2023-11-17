@@ -13,6 +13,6 @@ gameStart = require '/src/utilities/gameStart'
 function requireAll()    
     require('/src/items/sword')
     
-    require('/src/characters/slime')
+    require('/src/characters/enemy')
     require('/src/characters/player')
 end

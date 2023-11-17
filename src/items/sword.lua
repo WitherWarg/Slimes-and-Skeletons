@@ -1,9 +1,6 @@
 sword = {}
 
 function sword:load()
-    self.woodImage = love.graphics.newImage('/sprites/items/wood_sword.png')
-    
-    self.image = self.woodImage
     self.sx = 1.4
     self.sy = 0.7
     self.width = 8 * self.sx
@@ -12,28 +9,6 @@ function sword:load()
 end
 
 function sword:update(dt)
-    if self.dir == 'down' then
-        self.x = player.x + 5 * player.scale
-        self.y = player.y + 6 * player.scale
-
-        self.radians = math.pi / 2
-    elseif self.dir == 'up' then
-        self.x = player.x - 5 * player.scale
-        self.y = player.y + 5 * player.scale
-
-        self.radians = math.pi * 3 / 2
-    elseif self.dir == 'right' then
-        self.x = player.x - 7 * player.scale
-        self.y = player.y + 6 * player.scale
-
-        self.radians = math.pi
-    else
-        self.x = player.x + 7 * player.scale
-        self.y = player.y + 6 * player.scale
-
-        self.radians = math.pi
-    end
-
     if self.collider and self.collider:enter('Enemy') then
         local collision_data = sword.collider:getEnterCollisionData('Enemy')
         local enemy = collision_data.collider:getObject()
@@ -53,6 +28,15 @@ function sword:update(dt)
         if not collisionExecuted then
             enemy.hp = enemy.hp - 1
             collisionExecuted = true
+            
+            if enemy.hp ~= 0 then
+                if enemy.dir == 'right' then enemy.animation = enemy.animations.dmgRight
+                else enemy.animation = enemy.animations.dmgLeft end
+                
+                enemy.dir = 'dmg'
+                enemy.collider:setLinearVelocity(0, 0)
+                enemy.animation:gotoFrame(1)
+            end
         end
     else collisionExecuted = false end
 
@@ -62,37 +46,31 @@ function sword:update(dt)
     end
 end
 
-function sword:draw()
-    if self.strike then
-        love.graphics.draw(self.image, self.x, self.y, self.radians, self.sx, self.sy, self.image:getWidth() / 2, self.image:getHeight())
-    end
-end
-
 function sword:mousepressed(dir)
-    if self.type == 'wood' then self.image = self.woodImage end
     self.dir = dir
 
     clock.script(function(wait)
         local colliderX, colliderY
+        local animSpd = player.animation.intervals[2]
 
-        wait(player.animSpd)
+        wait(animSpd)
         self.strike = true
 
-        if self.dir == 'down' then
-            colliderX = player.x - player.width / 2
-            colliderY = player.y
-        elseif self.dir == 'right' then
-            colliderX = player.x + player.width / 2
+        if self.dir == 'right' then
+            colliderX = player.x
             colliderY = player.y - player.height
         elseif self.dir == 'left' then
-            colliderX = player.x - player.width * 2
+            colliderX = player.x - self.width - player.width
             colliderY = player.y - player.height
+        elseif self.dir == 'down' then
+            colliderX = player.x - player.width + 10
+            colliderY = player.y - self.height/2
         else
-            colliderX = player.x + player.width / 2
-            colliderY = player.y - self.height / 2
+            colliderX = player.x + 5
+            colliderY = player.y - self.height
         end
 
-        clock.during(player.animSpd*2, function()
+        clock.during(player.animation.intervals[3], function()
             if self.dir == 'up' or self.dir == 'down' then
                 self.collider = world:newRectangleCollider(colliderX, colliderY, self.width, self.height)
             else
@@ -102,21 +80,21 @@ function sword:mousepressed(dir)
             self.collider:setCollisionClass('Sword')
         end)
 
-        wait(player.animSpd)
+        wait(animSpd)
         self.strike = false
         
-        if self.dir == 'down' then
-            colliderX = player.x + player.width / 2 - self.width
+        if self.dir == 'right' then
+            colliderX = player.x
             colliderY = player.y
-        elseif self.dir == 'up' then
-            colliderX = player.x - player.width / 2
-            colliderY = player.y - self.height / 2
-        elseif self.dir == 'right' then
-            colliderX = player.x + player.width / 2
-            colliderY = player.y + player.height
-        else            
-            colliderX = player.x - player.width * 2
-            colliderY = player.y + player.height
+        elseif self.dir == 'left' then
+            colliderX = player.x - self.width - player.width
+            colliderY = player.y
+        elseif self.dir == 'down' then
+            colliderX = player.x + 10
+            colliderY = player.y - self.height/2
+        else
+            colliderX = player.x - player.width + 5
+            colliderY = player.y - self.height
         end
     end)
 end
