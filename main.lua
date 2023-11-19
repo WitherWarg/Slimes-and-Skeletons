@@ -2,19 +2,17 @@ function love.load()
     require('/src/utilities/require')
 
     love.graphics.setDefaultFilter("nearest", "nearest")
+    math.randomseed(os.time())
     
     world = wf.newWorld(0, 0)
     world:setQueryDebugDrawing(true)
     WIDTH, HEIGHT = love.graphics.getDimensions()
-    FPS = nil
+    FPS = 10
     SX, SY = 1, 1
     cam = camera()
-    
-    requireAll()
 
     createCollisionClasses()
     player:load()
-    sword:load()
 
     function printTable(t, check)
         check = check or true
@@ -29,12 +27,11 @@ function love.update(dt)
     if not pause then
         if not player.dead then
             world:update(dt)
-            sword:update(dt)
             flux.update(dt)
             if FPS then love.timer.sleep(1/FPS) end
         end
         
-        Enemy:update(dt)
+        Slime:update(dt)
         player:update(dt)
         clock.update(dt)
         cam:lookAt(player.x, player.y)
@@ -53,32 +50,13 @@ function love.draw()
     cam:attach()
     if player.dead then
         reset()
-        player:draw()
-
-        if player.animation.position == 3 then
-            love.graphics.setColor(hsl(0, 100, 50, 50))
-            love.graphics.rectangle("fill", cam.x - WIDTH/2, cam.y - HEIGHT/2, WIDTH, HEIGHT)
-
-            local font = love.graphics.newFont('/font/game_over.ttf', 100)
-            local text = 'Game Over'
-            love.graphics.setFont(font)
-            love.graphics.setColor(hsl(0,0,0))
-            for i=1, 10 do love.graphics.print(text, cam.x, cam.y, nil, 1, 1, font:getWidth(text)/2, font:getHeight()/2) end
-            
-            if math.floor(love.timer.getTime()/0.5) % 2 == 0 then
-                font = love.graphics.newFont('/font/game_over.ttf', 40)
-                text = 'Press space to restart'
-                love.graphics.setFont(font)
-                local y = cam.y + font:getHeight() * 2
-                love.graphics.print(text, cam.x, y, nil, 1, 1, font:getWidth(text)/2, font:getHeight()/2)
-            end
-        end
+        deathScreen()
     else
         reset()
 
-        Enemy:draw()
+        Slime:draw()
         player:draw()
-        world:draw()
+        --world:draw()
     end
     cam:detach()
 
@@ -106,6 +84,6 @@ function love.keypressed(key)
 
         if key == 'h' then player.hearts:heal() end
 
-        if key == 'n' then newSkeleton() end
+        if key == 'n' then Slime.new() end
     end
 end

@@ -4,7 +4,6 @@ function gameStart()
         
     createCollisionClasses()
     player:load()
-    sword:load()
     
     player.dead = false
 end

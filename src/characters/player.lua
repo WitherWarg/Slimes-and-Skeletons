@@ -42,9 +42,11 @@ function player:load()
     self.collider:setFixedRotation(true)
 
     self.hearts:load()
+    self.sword:load()
 end
 
 function player:update(dt)
+    self.sword:update(dt)
     self.dead = self.hearts.hearts == 0
 
     if self.dead and self.animation.position == 3 then
@@ -128,8 +130,7 @@ function player:update(dt)
         self.hearts:damage()
     end
 
-    self.x = self.collider:getX()
-    self.y = self.collider:getY()
+    self.x, self.y = self.collider:getPosition()
 end
 
 function player:draw()
@@ -161,7 +162,7 @@ function player:mousepressed()
     self.animation:gotoFrame(1)
     
     clock.after(self.animation.intervals[#self.animation.frames], function() self.strike = false end)
-    sword:mousepressed(self.dir)
+    self.sword:mousepressed(self.dir)
 end
 
 player.hearts = {}
@@ -206,3 +207,103 @@ function player.hearts:heal()
         animation:gotoFrame(1)
     end
 end
+
+player.sword = {}
+
+function player.sword:load()
+    self.width = 12
+    self.height = 50
+    self.strike = false
+end
+
+function player.sword:update(dt)
+    if self.collider and self.collider:enter('Enemy') then
+        local collision_data = self.collider:getEnterCollisionData('Enemy')
+        local enemy = collision_data.collider:getObject()
+
+        local dx, dy = collision_data.contact:getNormal()
+        local scalingFactor = -100
+            
+        dx = dx * scalingFactor + enemy.collider:getX()
+        dy = dy * scalingFactor + enemy.collider:getY()
+        enemy.collider:setPosition(dx, dy)
+        enemy.x, enemy.y = enemy.collider:getPosition()
+
+        if not self.strike then
+            enemy.hp = enemy.hp - 1
+            self.strike = true
+            
+            if enemy.hp == 0 then
+                if enemy.dir == 'right' then enemy.animation = enemy.animations.strikeRight
+                else enemy.animation = enemy.animations.strikeLeft end
+            else
+                if enemy.dir == 'right' then enemy.animation = enemy.animations.dmgRight
+                else enemy.animation = enemy.animations.dmgLeft end
+                
+                enemy.dir = 'dmg'
+                enemy.collider:setLinearVelocity(0, 0)
+                enemy.animation:gotoFrame(1)
+            end
+        end
+    else self.strike = false end
+
+    if self.collider then
+        self.collider:destroy()
+        self.collider = nil
+    end
+end
+
+function player.sword:mousepressed(dir)
+    self.dir = dir
+
+    clock.script(function(wait)
+        local colliderX, colliderY = 0, 0
+        local animSpd = player.animation.intervals[2]
+
+        wait(animSpd)
+        self.strike = true
+
+        if self.dir == 'right' then
+            colliderX = player.x
+            colliderY = player.y - self.width - 10
+        elseif self.dir == 'left' then
+            colliderX = player.x - self.height
+            colliderY = player.y - self.width - 10
+        elseif self.dir == 'down' then
+            colliderX = player.x - self.width
+            colliderY = player.y - self.height/2
+        else
+            colliderX = player.x
+            colliderY = player.y - self.height
+        end
+
+        clock.during(player.animation.intervals[3], function()
+            if self.dir == 'up' or self.dir == 'down' then
+                self.collider = world:newRectangleCollider(colliderX, colliderY, self.width, self.height)
+            else
+                self.collider = world:newRectangleCollider(colliderX, colliderY, self.height, self.width)
+            end
+        
+            self.collider:setCollisionClass('Sword')
+        end)
+
+        wait(animSpd)
+        self.strike = false
+        
+        if self.dir == 'right' then
+            colliderX = player.x
+            colliderY = player.y
+        elseif self.dir == 'left' then
+            colliderX = player.x - self.height
+            colliderY = player.y
+        elseif self.dir == 'down' then
+            colliderX = player.x
+            colliderY = player.y - self.height/2
+        else
+            colliderX = player.x - self.width
+            colliderY = player.y - self.height
+        end
+    end)
+end
+
+return player

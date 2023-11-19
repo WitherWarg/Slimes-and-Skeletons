@@ -141,34 +141,6 @@ function Enemy:draw()
     end
 end
 
-function newSlime(x, y, dir)
-    local frameData = {
-        path = '/sprites/characters/slime.png',
-        columns = 7,
-        rows = 5,
-        animations = {
-            right = { frames = '1-6', row = 2, animSpd = 0.2 },
-            left = { frames = '1-6', row = 2, animSpd = 0.2, flipH = true },
-
-            idleRight = { frames = '1-4', row = 1, animSpd = 0.2 },
-            idleLeft = { frames = '1-4', row = 1, animSpd = 0.2, flipH = true },
-
-            dieRight = { frames = '1-5', row = 5, animSpd = 0.2, mode = 'pauseAtEnd' },
-            dieLeft = { frames = '1-5', row = 5, animSpd = 0.2, flipH = true, mode = 'pauseAtEnd' },
-            
-            dmgRight = { frames = '1-3', row = 4, animSpd = 0.2, mode = 'pauseAtEnd' },
-            dmgLeft = { frames = '1-3', row = 4, animSpd = 0.2, flipH = true, mode = 'pauseAtEnd' },
-            
-            strikeRight = { frames = '1-7', row = 3, animSpd = 0.2 },
-            strikeLeft = { frames = '1-7', row = 3, animSpd = 0.2, flipH = true }
-        }
-    }
-
-    local colliderData = { width = 14, height = 11, cut = 10 }
-
-    Enemy.new(x, y, dir, frameData, colliderData)
-end
-
 function newSkeleton(x, y, dir)
     local frameData = {
         path = '/sprites/characters/skeleton.png',
