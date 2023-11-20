@@ -11,4 +11,5 @@ gameStart = require('/src/utilities/gameStart')
 deathScreen = require('/src/utilities/deathScreen')
 
 Slime = require('/src/characters/slime')
+Skeleton = require('/src/characters/skeleton')
 player = require('/src/characters/player')

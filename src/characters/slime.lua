@@ -4,7 +4,7 @@ function Slime.new(x, y)
     local slime = {}
 
     slime.scale = player.scale
-    slime.aggro = 200
+    slime.aggro = 250
     slime.hp = 4
 
     slime.x = x or player.x + slime.aggro
@@ -127,10 +127,8 @@ function Slime:update(dt)
                 else slime.animation = slime.animations.left end
                 slime.idle = false
 
-                dx = dx / math.abs(dx)
-                dy = dy / math.abs(dy)
-                length = math.sqrt(dx * dx + dy * dy)
-                slime.collider:setLinearVelocity(slime.spd * dx / length, slime.spd * dy / length)
+                local angle = math.atan2(dy, dx)
+                slime.collider:setLinearVelocity(slime.spd * math.cos(angle), slime.spd * math.sin(angle))
             end
         else
             if slime.dir == 'right' then slime.animation = slime.animations.idleRight

@@ -32,6 +32,7 @@ function love.update(dt)
         end
         
         Slime:update(dt)
+        Skeleton:update(dt)
         player:update(dt)
         clock.update(dt)
         cam:lookAt(player.x, player.y)
@@ -55,6 +56,7 @@ function love.draw()
         reset()
 
         Slime:draw()
+        Skeleton:draw()
         player:draw()
         --world:draw()
     end
@@ -84,6 +86,6 @@ function love.keypressed(key)
 
         if key == 'h' then player.hearts:heal() end
 
-        if key == 'n' then Slime.new() end
+        if key == 'n' then Skeleton.new() end
     end
 end
