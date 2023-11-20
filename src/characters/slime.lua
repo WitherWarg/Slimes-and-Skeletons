@@ -38,8 +38,8 @@ function Slime.new(x, y)
         dmgRight = { frames = '1-3', row = 4, mode = 'pauseAtEnd' },
         dmgLeft = { frames = '1-3', row = 4, flipH = true, mode = 'pauseAtEnd' },
         
-        strikeRight = { frames = '1-7', row = 3 },
-        strikeLeft = { frames = '1-7', row = 3, flipH = true }
+        dashRight = { frames = '1-7', row = 3 },
+        dashLeft = { frames = '1-7', row = 3, flipH = true }
     }
 
     slime.animations = {}
@@ -51,7 +51,7 @@ function Slime.new(x, y)
 
     slime.animation = slime.animations.idleRight
     slime.dir = 'right'
-    slime.idle = true
+    slime.state = 'idle'
 
     table.insert(Slime, slime)
 end
@@ -60,7 +60,14 @@ function Slime:update(dt)
     for i = #self, 1, -1 do
         local slime = self[i]
 
-        if player.dead or slime.hp == 0 and slime.animation.position == 5 then
+        if slime.x < player.x then slime.dir = 'right'
+        else slime.dir = 'left' end
+
+        if player.dead or slime.state == 'dead' and slime.animation.position == 5 then
+            if slime.collider then
+                slime.collider:destroy()
+                slime.collider = nil
+            end
             slime = nil
             table.remove(Slime, i)
             goto continue
@@ -80,52 +87,55 @@ function Slime:update(dt)
 
             if slime.dir == 'right' then slime.animation = slime.animations.dieRight
             else slime.animation = slime.animations.dieLeft end
-            slime.idle = false
+            slime.state = 'dead'
             goto continue
         end
 
-        if slime.x < player.x then slime.dir = 'right'
-        else slime.dir = 'left' end
-
         slime.x, slime.y = slime.collider:getPosition()
-
+        
         local dx, dy = player.x - slime.x, player.y - slime.y
         local length = math.sqrt(dx * dx + dy * dy)
+        
 
-        if slime.dir == 'dmg' and slime.animation.position ~= 3 then goto continue end
         if length < slime.aggro then
-            if length < math.sqrt(2 * 100 * 100) and not slime.strike then
-                slime.strike = true
+            if length < math.sqrt(2 * 100 * 100) and not slime.dash then
+                slime.dash = true
                 slime.collider:setLinearVelocity(1, 1)
 
-                local angle = math.atan2(slime.y - player.y, slime.x - player.x)
+                local angle = math.atan2(dx, dy)
                 local radius = 5
                 local targetX = player.x + radius * math.cos(angle)
                 local targetY = player.y + radius * math.sin(angle)
 
                 clock.during(slime.animation.intervals[#slime.animation.frames], function()
-                    if slime.dir == 'right' then slime.animation = slime.animations.strikeRight
-                    else slime.animation = slime.animations.strikeLeft end
-                    slime.idle = false
+                    if slime.dir == 'right' then slime.animation = slime.animations.dashRight
+                    else slime.animation = slime.animations.dashLeft end
+                    slime.state = 'dash'
                 end)
 
-                slime.tween = flux.to(slime, slime.animation.intervals[5], {x = targetX, y = targetY}):delay(slime.animation.intervals[2]):onupdate(function()
+                local frames = slime.animations.dashRight.intervals
+                slime.tween = flux.to(slime, frames[5], {x = targetX, y = targetY}):delay(slime.animation.intervals[2]):onupdate(function()
                     slime.collider:setPosition(slime.x, slime.y)
                 end):oncomplete(function()
                     clock.during(0.5, function()
-                        if slime.dir == 'right' then slime.animation = slime.animations.idleRight
-                        else slime.animation = slime.animations.idleLeft end
-                        slime.idle = true
-                    end, function() slime.strike = false end)
+                        local right, left = slime.animations.idleRight, slime.animations.idleLeft
+                        if slime.state == 'dmg' then right, left = slime.animations.dmgRight, slime.animations.dmgLeft
+                        else slime.state = 'idle' end
+                        if slime.dir == 'right' then slime.animation = right
+                        else slime.animation = left end
+                    end, function()
+                        slime.dash = false
+                        if slime.dir == 'right' then slime.animations.dmgRight:gotoFrame(1)
+                        else slime.animations.dmgLeft:gotoFrame(1) end
+                    end)
 
-                    if slime.dir == 'right' then slime.animations.strikeRight:gotoFrame(1)
-                    else slime.animations.strikeLeft:gotoFrame(1) end
-                    slime.idle = false
+                    if slime.dir == 'right' then slime.animations.dashRight:gotoFrame(1)
+                    else slime.animations.dashLeft:gotoFrame(1) end
                 end)
-            elseif not slime.strike then
+            elseif not slime.dash then
                 if slime.dir == 'right' then slime.animation = slime.animations.right
                 else slime.animation = slime.animations.left end
-                slime.idle = false
+                slime.state = 'move'
 
                 local angle = math.atan2(dy, dx)
                 slime.collider:setLinearVelocity(slime.spd * math.cos(angle), slime.spd * math.sin(angle))
@@ -133,10 +143,10 @@ function Slime:update(dt)
         else
             if slime.dir == 'right' then slime.animation = slime.animations.idleRight
             else slime.animation = slime.animations.idleLeft end
-            slime.idle = true
+            slime.state = 'idle'
             slime.collider:setLinearVelocity(0, 0)
         end
-
+        
         ::continue::
     end
 end

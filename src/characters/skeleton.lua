@@ -58,7 +58,14 @@ function Skeleton:update(dt)
     for i = #self, 1, -1 do
         local skeleton = self[i]
 
-        if player.dead or skeleton.hp == 0 and skeleton.animation.position == 5 then
+        if skeleton.x < player.x then skeleton.dir = 'right'
+        else skeleton.dir = 'left' end
+
+        if player.dead or skeleton.state == 'dead' and skeleton.animation.position == 5 then
+            if skeleton.collider then
+                skeleton.collider:destroy()
+                skeleton.collider = nil
+            end
             skeleton = nil
             table.remove(Skeleton, i)
             goto continue
@@ -78,19 +85,16 @@ function Skeleton:update(dt)
 
             if skeleton.dir == 'right' then skeleton.animation = skeleton.animations.dieRight
             else skeleton.animation = skeleton.animations.dieLeft end
-            skeleton.idle = false
+            skeleton.state = 'dead'
             goto continue
         end
 
-        if skeleton.x < player.x then skeleton.dir = 'right'
-        else skeleton.dir = 'left' end
-
         skeleton.x, skeleton.y = skeleton.collider:getPosition()
-
+        
         local dx, dy = player.x - skeleton.x, player.y - skeleton.y
         local length = math.sqrt(dx * dx + dy * dy)
+        
 
-        if skeleton.dir == 'dmg' and skeleton.animation.position ~= 3 then goto continue end
         if length < skeleton.aggro then
             if length < math.sqrt(2 * 100 * 100) and not skeleton.strike then
                 skeleton.strike = true
@@ -104,26 +108,32 @@ function Skeleton:update(dt)
                 clock.during(skeleton.animation.intervals[#skeleton.animation.frames], function()
                     if skeleton.dir == 'right' then skeleton.animation = skeleton.animations.strikeRight
                     else skeleton.animation = skeleton.animations.strikeLeft end
-                    skeleton.idle = false
+                    skeleton.state = 'strike'
                 end)
 
-                skeleton.tween = flux.to(skeleton, skeleton.animation.intervals[5], {x = targetX, y = targetY}):delay(skeleton.animation.intervals[2]):onupdate(function()
+                local frames = skeleton.animations.strikeRight.intervals
+                skeleton.tween = flux.to(skeleton, frames[5], {x = targetX, y = targetY}):delay(skeleton.animation.intervals[2]):onupdate(function()
                     skeleton.collider:setPosition(skeleton.x, skeleton.y)
                 end):oncomplete(function()
-                    clock.during(0.7, function()
-                        if skeleton.dir == 'right' then skeleton.animation = skeleton.animations.idleRight
-                        else skeleton.animation = skeleton.animations.idleLeft end
-                        skeleton.idle = true
-                    end, function() skeleton.strike = false end)
+                    clock.during(0.5, function()
+                        local right, left = skeleton.animations.idleRight, skeleton.animations.idleLeft
+                        if skeleton.state == 'dmg' then right, left = skeleton.animations.dmgRight, skeleton.animations.dmgLeft
+                        else skeleton.state = 'idle' end
+                        if skeleton.dir == 'right' then skeleton.animation = right
+                        else skeleton.animation = left end
+                    end, function()
+                        skeleton.strike = false
+                        if skeleton.dir == 'right' then skeleton.animations.dmgRight:gotoFrame(1)
+                        else skeleton.animations.dmgLeft:gotoFrame(1) end
+                    end)
 
                     if skeleton.dir == 'right' then skeleton.animations.strikeRight:gotoFrame(1)
                     else skeleton.animations.strikeLeft:gotoFrame(1) end
-                    skeleton.idle = false
                 end)
             elseif not skeleton.strike then
                 if skeleton.dir == 'right' then skeleton.animation = skeleton.animations.right
                 else skeleton.animation = skeleton.animations.left end
-                skeleton.idle = false
+                skeleton.state = 'move'
 
                 local angle = math.atan2(dy, dx)
                 skeleton.collider:setLinearVelocity(skeleton.spd * math.cos(angle), skeleton.spd * math.sin(angle))
@@ -131,10 +141,10 @@ function Skeleton:update(dt)
         else
             if skeleton.dir == 'right' then skeleton.animation = skeleton.animations.idleRight
             else skeleton.animation = skeleton.animations.idleLeft end
-            skeleton.idle = true
+            skeleton.state = 'idle'
             skeleton.collider:setLinearVelocity(0, 0)
         end
-
+        
         ::continue::
     end
 end

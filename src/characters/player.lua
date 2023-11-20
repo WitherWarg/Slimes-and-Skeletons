@@ -119,7 +119,7 @@ function player:update(dt)
     if self.collider:enter('Enemy') then
         local collision_data = self.collider:getEnterCollisionData('Enemy')
         local enemy = collision_data.collider:getObject()
-        if enemy.dead then return end
+        if self.dead then return end
 
         dx, dy = collision_data.contact:getNormal()
         local scalingFactor = -math.pow(10, 6)
@@ -220,36 +220,27 @@ function player.sword:update(dt)
     if self.collider and self.collider:enter('Enemy') then
         local collision_data = self.collider:getEnterCollisionData('Enemy')
         local enemy = collision_data.collider:getObject()
-        if not enemy.idle then goto continue end
+        if enemy.state ~= 'idle' then goto continue end
 
         local dx, dy = collision_data.contact:getNormal()
-        local scalingFactor = -100
-            
-        dx = dx * scalingFactor + enemy.collider:getX()
-        dy = dy * scalingFactor + enemy.collider:getY()
+        dx, dy = -dx, -dy
+        local scalingFactor = 100
+
+        if enemy.dir == 'down' then dx = math.abs(dx)
+        elseif enemy.dir == 'up' then dx = -math.abs(dx)
+        else dy = math.abs(dy) end
+        
+        local x, y = enemy.collider:getPosition()
+        dx = dx * scalingFactor + x
+        dy = dy * scalingFactor + y
         enemy.collider:setPosition(dx, dy)
         enemy.x, enemy.y = enemy.collider:getPosition()
 
-        if not self.strike then
-            enemy.hp = enemy.hp - 1
-            self.strike = true
-            
-            if enemy.hp == 0 then
-                if enemy.dir == 'right' then enemy.animation = enemy.animations.strikeRight
-                else enemy.animation = enemy.animations.strikeLeft end
-            else
-                if enemy.dir == 'right' then enemy.animation = enemy.animations.dmgRight
-                else enemy.animation = enemy.animations.dmgLeft end
-                
-                enemy.dir = 'dmg'
-                enemy.collider:setLinearVelocity(0, 0)
-                enemy.animation:gotoFrame(1)
-            end
-        end
-    else self.strike = false end
+        enemy.hp = enemy.hp - 1
+        if enemy.hp > 0 then enemy.state = 'dmg' end
+    end
 
     ::continue::
-
     if self.collider then
         self.collider:destroy()
         self.collider = nil

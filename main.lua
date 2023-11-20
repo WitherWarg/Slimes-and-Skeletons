@@ -31,9 +31,9 @@ function love.update(dt)
             if FPS then love.timer.sleep(1/FPS) end
         end
         
+        player:update(dt)
         Slime:update(dt)
         Skeleton:update(dt)
-        player:update(dt)
         clock.update(dt)
         cam:lookAt(player.x, player.y)
     end
@@ -75,15 +75,17 @@ function love.resize(w, h)
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
+    if pause then return end
     if button == 1 and not player.strike then player:mousepressed() end
 end
 
 function love.keypressed(key)
-    if player.dead then
+    if player.dead and not pause then
         if key == 'space' and player.animation.position == 3 then gameStart() end
     else
         if key == 'p' or key == 'escape' then pause = not pause end
-
+        
+        if pause then return end
         if key == 'h' then player.hearts:heal() end
 
         if key == 'n' then Skeleton.new() end
