@@ -8,6 +8,7 @@ flux = require('/libraries/flux')
 hsl = require('/src/utilities/hsl')
 createCollisionClasses = require('/src/utilities/collisionClasses')
 gameStart = require('/src/utilities/gameStart')
+deathScreen = require('/src/utilities/deathScreen')
 
 Slime = require('/src/characters/slime')
 player = require('/src/characters/player')

@@ -212,7 +212,7 @@ player.sword = {}
 
 function player.sword:load()
     self.width = 12
-    self.height = 50
+    self.height = 60
     self.strike = false
 end
 
@@ -220,6 +220,7 @@ function player.sword:update(dt)
     if self.collider and self.collider:enter('Enemy') then
         local collision_data = self.collider:getEnterCollisionData('Enemy')
         local enemy = collision_data.collider:getObject()
+        if not enemy.idle then goto continue end
 
         local dx, dy = collision_data.contact:getNormal()
         local scalingFactor = -100
@@ -247,6 +248,8 @@ function player.sword:update(dt)
         end
     else self.strike = false end
 
+    ::continue::
+
     if self.collider then
         self.collider:destroy()
         self.collider = nil
@@ -259,21 +262,22 @@ function player.sword:mousepressed(dir)
     clock.script(function(wait)
         local colliderX, colliderY = 0, 0
         local animSpd = player.animation.intervals[2]
+        local change = 10
 
         wait(animSpd)
         self.strike = true
 
         if self.dir == 'right' then
             colliderX = player.x
-            colliderY = player.y - self.width - 10
+            colliderY = player.y - self.width - change*2
         elseif self.dir == 'left' then
             colliderX = player.x - self.height
-            colliderY = player.y - self.width - 10
+            colliderY = player.y - self.width - change*2
         elseif self.dir == 'down' then
-            colliderX = player.x - self.width
+            colliderX = player.x - self.width - change
             colliderY = player.y - self.height/2
         else
-            colliderX = player.x
+            colliderX = player.x + change
             colliderY = player.y - self.height
         end
 
@@ -297,10 +301,10 @@ function player.sword:mousepressed(dir)
             colliderX = player.x - self.height
             colliderY = player.y
         elseif self.dir == 'down' then
-            colliderX = player.x
+            colliderX = player.x + change
             colliderY = player.y - self.height/2
         else
-            colliderX = player.x - self.width
+            colliderX = player.x - self.width - change
             colliderY = player.y - self.height
         end
     end)

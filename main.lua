@@ -7,7 +7,7 @@ function love.load()
     world = wf.newWorld(0, 0)
     world:setQueryDebugDrawing(true)
     WIDTH, HEIGHT = love.graphics.getDimensions()
-    FPS = 10
+    FPS = nil
     SX, SY = 1, 1
     cam = camera()
 
