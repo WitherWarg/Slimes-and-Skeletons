@@ -53,6 +53,12 @@ function Slime.new(x, y)
     slime.dir = 'right'
     slime.state = 'idle'
 
+    function slime:draw()
+        if slime.hp > 0 or slime.animation.position < 5 then
+            slime.animation:draw(slime.spriteSheet, slime.x, slime.y, nil, slime.scale, slime.scale, slime.frameWidth / 2, slime.frameHeight / 2)
+        end
+    end
+
     table.insert(Slime, slime)
 end
 
@@ -64,10 +70,7 @@ function Slime:update(dt)
         else slime.dir = 'left' end
 
         if player.dead or slime.state == 'dead' and slime.animation.position == 5 then
-            if slime.collider then
-                slime.collider:destroy()
-                slime.collider = nil
-            end
+            destroyObject(slime)
             slime = nil
             table.remove(Slime, i)
             goto continue
@@ -76,14 +79,7 @@ function Slime:update(dt)
         slime.animation:update(dt)
 
         if slime.hp == 0 then
-            if slime.collider then
-                slime.collider:destroy()
-                slime.collider = nil
-            end
-            if slime.tween then
-                slime.tween:stop()
-                slime.tween = nil
-            end
+            destroyObject(slime)
 
             if slime.dir == 'right' then slime.animation = slime.animations.dieRight
             else slime.animation = slime.animations.dieLeft end
@@ -114,7 +110,7 @@ function Slime:update(dt)
                 end)
 
                 local frames = slime.animations.dashRight.intervals
-                slime.tween = flux.to(slime, frames[5], {x = targetX, y = targetY}):delay(slime.animation.intervals[2]):onupdate(function()
+                slime.tween = flux.to(slime, frames[5], {x = targetX, y = targetY}):delay(frames[3]):onupdate(function()
                     slime.collider:setPosition(slime.x, slime.y)
                 end):oncomplete(function()
                     clock.during(0.5, function()
@@ -148,16 +144,6 @@ function Slime:update(dt)
         end
         
         ::continue::
-    end
-end
-
-function Slime:draw()
-    for i = #self, 1, -1 do
-        local slime = self[i]
-
-        if slime.hp > 0 or slime.animation.position < 5 then
-            slime.animation:draw(slime.spriteSheet, slime.x, slime.y, nil, slime.scale, slime.scale, slime.frameWidth / 2, slime.frameHeight / 2)
-        end
     end
 end
 

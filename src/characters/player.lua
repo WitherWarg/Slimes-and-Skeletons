@@ -234,7 +234,7 @@ function player.sword:update(dt)
         dx = dx * scalingFactor + x
         dy = dy * scalingFactor + y
         enemy.collider:setPosition(dx, dy)
-        enemy.x, enemy.y = enemy.collider:getPosition()
+        enemy.x, enemy.y = dx, dy
 
         enemy.hp = enemy.hp - 1
         if enemy.hp > 0 then enemy.state = 'dmg' end

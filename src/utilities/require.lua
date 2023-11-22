@@ -9,6 +9,7 @@ hsl = require('/src/utilities/hsl')
 createCollisionClasses = require('/src/utilities/collisionClasses')
 gameStart = require('/src/utilities/gameStart')
 deathScreen = require('/src/utilities/deathScreen')
+destroyObject = require('/src/utilities/destroyObject')
 
 Slime = require('/src/characters/slime')
 Skeleton = require('/src/characters/skeleton')

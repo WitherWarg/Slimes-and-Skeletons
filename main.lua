@@ -55,9 +55,21 @@ function love.draw()
     else
         reset()
 
-        Slime:draw()
-        Skeleton:draw()
-        player:draw()
+        local entities = {player}
+
+        for _, slime in ipairs(Slime) do
+            table.insert(entities, slime)
+        end
+        for _, skeleton in ipairs(Skeleton) do
+            table.insert(entities, skeleton)
+        end
+        table.sort(entities, function(a, b)
+            return a.y < b.y
+        end)
+
+        for _, entity in ipairs(entities) do
+            entity:draw()
+        end
         --world:draw()
     end
     cam:detach()

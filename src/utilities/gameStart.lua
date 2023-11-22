@@ -1,4 +1,4 @@
-function gameStart()
+return function()
     world = wf.newWorld(0, 0)
     world:setQueryDebugDrawing(true)
         
@@ -7,5 +7,3 @@ function gameStart()
     
     player.dead = false
 end
-
-return gameStart

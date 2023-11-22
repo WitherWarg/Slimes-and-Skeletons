@@ -50,6 +50,14 @@ function Skeleton.new(x, y)
     end
 
     skeleton.animation = skeleton.animations.idleRight
+    skeleton.dir = 'right'
+    skeleton.state = 'idle'
+
+    function skeleton:draw()
+        if skeleton.hp > 0 or skeleton.animation.position < 5 then
+            skeleton.animation:draw(skeleton.spriteSheet, skeleton.x, skeleton.y, nil, skeleton.scale, skeleton.scale, skeleton.frameWidth / 2, skeleton.frameHeight / 2)
+        end
+    end
 
     table.insert(Skeleton, skeleton)
 end
@@ -62,10 +70,7 @@ function Skeleton:update(dt)
         else skeleton.dir = 'left' end
 
         if player.dead or skeleton.state == 'dead' and skeleton.animation.position == 5 then
-            if skeleton.collider then
-                skeleton.collider:destroy()
-                skeleton.collider = nil
-            end
+            destroyObject(skeleton)
             skeleton = nil
             table.remove(Skeleton, i)
             goto continue
@@ -74,14 +79,7 @@ function Skeleton:update(dt)
         skeleton.animation:update(dt)
 
         if skeleton.hp == 0 then
-            if skeleton.collider then
-                skeleton.collider:destroy()
-                skeleton.collider = nil
-            end
-            if skeleton.tween then
-                skeleton.tween:stop()
-                skeleton.tween = nil
-            end
+            destroyObject(skeleton)
 
             if skeleton.dir == 'right' then skeleton.animation = skeleton.animations.dieRight
             else skeleton.animation = skeleton.animations.dieLeft end
@@ -112,7 +110,7 @@ function Skeleton:update(dt)
                 end)
 
                 local frames = skeleton.animations.strikeRight.intervals
-                skeleton.tween = flux.to(skeleton, frames[5], {x = targetX, y = targetY}):delay(skeleton.animation.intervals[2]):onupdate(function()
+                skeleton.tween = flux.to(skeleton, frames[5], {x = targetX, y = targetY}):delay(frames[3]):onupdate(function()
                     skeleton.collider:setPosition(skeleton.x, skeleton.y)
                 end):oncomplete(function()
                     clock.during(0.5, function()
@@ -146,16 +144,6 @@ function Skeleton:update(dt)
         end
         
         ::continue::
-    end
-end
-
-function Skeleton:draw()
-    for i = #self, 1, -1 do
-        local skeleton = self[i]
-
-        if skeleton.hp > 0 or skeleton.animation.position < 5 then
-            skeleton.animation:draw(skeleton.spriteSheet, skeleton.x, skeleton.y, nil, skeleton.scale, skeleton.scale, skeleton.frameWidth / 2, skeleton.frameHeight / 2)
-        end
     end
 end
 

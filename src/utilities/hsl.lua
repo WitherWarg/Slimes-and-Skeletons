@@ -1,4 +1,4 @@
-function hsl(h, s, l, a)
+return function(h, s, l, a)
     h = h / 360
     s = s / 100
     l = l / 100
@@ -27,5 +27,3 @@ function hsl(h, s, l, a)
 
     return r, g, b, a
 end
-
-return hsl
