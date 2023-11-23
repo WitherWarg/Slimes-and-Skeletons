@@ -32,11 +32,11 @@ function Slime.new(x, y)
         idleRight = { frames = '1-4', row = 1 },
         idleLeft = { frames = '1-4', row = 1, flipH = true },
 
-        dieRight = { frames = '1-5', row = 5, mode = 'pauseAtEnd', animSpd = 0.5 },
-        dieLeft = { frames = '1-5', row = 5, flipH = true, mode = 'pauseAtEnd', animSpd = 0.5 },
+        dieRight = { frames = '1-5', row = 5, onLoop = 'pauseAtEnd', animSpd = 0.5 },
+        dieLeft = { frames = '1-5', row = 5, flipH = true, onLoop = 'pauseAtEnd', animSpd = 0.5 },
         
-        dmgRight = { frames = '1-3', row = 4, mode = 'pauseAtEnd' },
-        dmgLeft = { frames = '1-3', row = 4, flipH = true, mode = 'pauseAtEnd' },
+        dmgRight = { frames = '1-3', row = 4 },
+        dmgLeft = { frames = '1-3', row = 4, flipH = true },
         
         dashRight = { frames = '1-7', row = 3 },
         dashLeft = { frames = '1-7', row = 3, flipH = true }
@@ -44,7 +44,7 @@ function Slime.new(x, y)
 
     slime.animations = {}
     for key, data in pairs(animations) do
-        local animation = anim8.newAnimation(g(data.frames, data.row), data.animSpd or 0.2, data.mode)
+        local animation = anim8.newAnimation(g(data.frames, data.row), data.animSpd or 0.2, data.onLoop)
         if data.flipH then animation:flipH() end
         slime.animations[key] = animation
     end
@@ -98,35 +98,33 @@ function Slime:update(dt)
                 slime.dash = true
                 slime.collider:setLinearVelocity(1, 1)
 
-                local angle = math.atan2(dx, dy)
+                local angle = math.atan2(dy, dx)
                 local radius = 5
-                local targetX = player.x + radius * math.cos(angle)
-                local targetY = player.y + radius * math.sin(angle)
+                local targetX = player.x - radius * math.cos(angle)
+                local targetY = player.y - radius * math.sin(angle)
 
-                clock.during(slime.animation.intervals[#slime.animation.frames], function()
-                    if slime.dir == 'right' then slime.animation = slime.animations.dashRight
-                    else slime.animation = slime.animations.dashLeft end
-                    slime.state = 'dash'
-                end)
+                if slime.dir == 'right' then slime.animation = slime.animations.dashRight
+                else slime.animation = slime.animations.dashLeft end
+                slime.state = 'dash'
 
-                local frames = slime.animations.dashRight.intervals
-                slime.tween = flux.to(slime, frames[5], {x = targetX, y = targetY}):delay(frames[3]):onupdate(function()
+                local buffer = slime.animation.intervals[3]
+                slime.tween = flux.to(slime, slime.animation.totalDuration - buffer, {x = targetX, y = targetY}):delay(buffer):onupdate(function()
                     slime.collider:setPosition(slime.x, slime.y)
                 end):oncomplete(function()
-                    clock.during(0.5, function()
-                        local right, left = slime.animations.idleRight, slime.animations.idleLeft
-                        if slime.state == 'dmg' then right, left = slime.animations.dmgRight, slime.animations.dmgLeft
-                        else slime.state = 'idle' end
-                        if slime.dir == 'right' then slime.animation = right
-                        else slime.animation = left end
-                    end, function()
-                        slime.dash = false
-                        if slime.dir == 'right' then slime.animations.dmgRight:gotoFrame(1)
-                        else slime.animations.dmgLeft:gotoFrame(1) end
-                    end)
-
-                    if slime.dir == 'right' then slime.animations.dashRight:gotoFrame(1)
-                    else slime.animations.dashLeft:gotoFrame(1) end
+                    local after = function() slime.dash = false end
+                    slime.handle = clock.during(0.5, function()
+                        if slime.state == 'dmg' then
+                            clock.during(slime.animations.dmgRight.totalDuration, function()
+                                if slime.dir == 'right' then slime.animation = slime.animations.dmgRight
+                                else slime.animation = slime.animations.dmgLeft end
+                            end, after)
+                            clock.cancel(slime.handle)
+                        else
+                            slime.state = 'idle'
+                            if slime.dir == 'right' then slime.animation = slime.animations.idleRight
+                            else slime.animation = slime.animations.idleLeft end
+                        end
+                    end, after)
                 end)
             elseif not slime.dash then
                 if slime.dir == 'right' then slime.animation = slime.animations.right

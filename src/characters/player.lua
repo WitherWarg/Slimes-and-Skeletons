@@ -222,8 +222,11 @@ function player.sword:update(dt)
         local enemy = collision_data.collider:getObject()
         if enemy.state ~= 'idle' then goto continue end
 
-        local dx, dy = collision_data.contact:getNormal()
-        dx, dy = -dx, -dy
+        local dx, dy = 0, 0
+        if self.dir == 'up' then dx, dy = -1, math.random(0, -1)
+        elseif self.dir == 'down' then dx, dy = 1, math.random(0, 1)
+        elseif self.dir == 'right' then dx, dy = math.random(0, 1), 1
+        else dx, dy = math.random(0, -1), 1 end
         local scalingFactor = 100
 
         if enemy.dir == 'down' then dx = math.abs(dx)
@@ -237,7 +240,7 @@ function player.sword:update(dt)
         enemy.x, enemy.y = dx, dy
 
         enemy.hp = enemy.hp - 1
-        if enemy.hp > 0 then enemy.state = 'dmg' end
+        enemy.state = 'dmg'
     end
 
     ::continue::
@@ -258,25 +261,24 @@ function player.sword:mousepressed(dir)
         wait(animSpd)
         self.strike = true
 
+        local cx, cy = 0, 0
         if self.dir == 'right' then
-            colliderX = player.x
-            colliderY = player.y - self.width - change*2
+            cy = -self.width - change*2
         elseif self.dir == 'left' then
-            colliderX = player.x - self.height
-            colliderY = player.y - self.width - change*2
+            cx, cy = -self.height, -self.width - change*2
         elseif self.dir == 'down' then
-            colliderX = player.x - self.width - change
-            colliderY = player.y - self.height/2
+            cx, cy = -self.width - change, -self.height/2
         else
-            colliderX = player.x + change
-            colliderY = player.y - self.height
+            cx, cy = change, -self.height
         end
+
+        colliderX, colliderY = player.x + cx, player.y + cy
 
         clock.during(player.animation.intervals[3], function()
             if self.dir == 'up' or self.dir == 'down' then
-                self.collider = world:newRectangleCollider(colliderX, colliderY, self.width, self.height)
+                self.collider = world:newRectangleCollider(player.x + cx, player.y + cy, self.width, self.height)
             else
-                self.collider = world:newRectangleCollider(colliderX, colliderY, self.height, self.width)
+                self.collider = world:newRectangleCollider(player.x + cx, player.y + cy, self.height, self.width)
             end
         
             self.collider:setCollisionClass('Sword')
@@ -285,19 +287,18 @@ function player.sword:mousepressed(dir)
         wait(animSpd)
         self.strike = false
         
+        cx, cy = 0, 0
         if self.dir == 'right' then
-            colliderX = player.x
-            colliderY = player.y
+            cx = change
         elseif self.dir == 'left' then
-            colliderX = player.x - self.height
-            colliderY = player.y
+            cx = -self.height
         elseif self.dir == 'down' then
-            colliderX = player.x + change
-            colliderY = player.y - self.height/2
+            cx, cy = change, -self.height/2
         else
-            colliderX = player.x - self.width - change
-            colliderY = player.y - self.height
+            cx, cy = -self.width - change, -self.height
         end
+
+        colliderX, colliderY = player.x + cx, player.y + cy
     end)
 end
 

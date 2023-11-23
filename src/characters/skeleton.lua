@@ -32,19 +32,19 @@ function Skeleton.new(x, y)
         idleRight = { frames = '1-6', row = 1 },
         idleLeft = { frames = '1-6', row = 1, flipH = true },
 
-        dieRight = { frames = '1-5', row = 5, animSpd = 0.5, mode = 'pauseAtEnd' },
-        dieLeft = { frames = '1-5', row = 5, animSpd = 0.5, mode = 'pauseAtEnd', flipH = true },
+        dieRight = { frames = '1-5', row = 5, animSpd = 0.5, onLoop = 'pauseAtEnd' },
+        dieLeft = { frames = '1-5', row = 5, animSpd = 0.5, onLoop = 'pauseAtEnd', flipH = true },
 
-        dmgRight = { frames = '1-3', row = 4, mode = 'pauseAtEnd' },
-        dmgLeft = { frames = '1-3', row = 4, mode = 'pauseAtEnd', flipH = true },
+        dmgRight = { frames = '1-3', row = 4},
+        dmgLeft = { frames = '1-3', row = 4, flipH = true },
 
-        strikeRight = { frames = '1-5', row = 3 },
-        strikeLeft = { frames = '1-5', row = 3, flipH = true }
+        strikeRight = { frames = '1-5', row = 3, animSpd = {['1-2']=0.5, ['3-5']=0.2} },
+        strikeLeft = { frames = '1-5', row = 3, flipH = true, animSpd = {['1-2']=0.5, ['3-5']=0.2} }
     }
 
     skeleton.animations = {}
     for key, data in pairs(animations) do
-        local animation = anim8.newAnimation(g(data.frames, data.row), data.animSpeed or 0.2, data.mode)
+        local animation = anim8.newAnimation(g(data.frames, data.row), data.animSpd or 0.2, data.onLoop)
         if data.flipH then animation:flipH() end
         skeleton.animations[key] = animation
     end
@@ -55,8 +55,98 @@ function Skeleton.new(x, y)
 
     function skeleton:draw()
         if skeleton.hp > 0 or skeleton.animation.position < 5 then
-            skeleton.animation:draw(skeleton.spriteSheet, skeleton.x, skeleton.y, nil, skeleton.scale, skeleton.scale, skeleton.frameWidth / 2, skeleton.frameHeight / 2)
+            skeleton.animation:draw(skeleton.spriteSheet, skeleton.x, skeleton.y, nil, skeleton.scale, skeleton.scale, skeleton.frameWidth/2, skeleton.frameHeight/2)
         end
+    end
+
+    skeleton.sword = {}
+        skeleton.sword.width = 12
+        skeleton.sword.height = 60
+        skeleton.sword.strike = false
+
+    function skeleton.sword:update(dt)
+        if self.collider and self.collider:enter('Enemy') then
+            local collision_data = self.collider:getEnterCollisionData('Enemy')
+            local enemy = collision_data.collider:getObject()
+            if enemy.state ~= 'idle' then goto continue end
+
+            local dx, dy = collision_data.contact:getNormal()
+            dx, dy = -dx, -dy
+            local scalingFactor = 100
+
+            if enemy.dir == 'down' then dx = math.abs(dx)
+            elseif enemy.dir == 'up' then dx = -math.abs(dx)
+            else dy = math.abs(dy) end
+            
+            local x, y = enemy.collider:getPosition()
+            dx = dx * scalingFactor + x
+            dy = dy * scalingFactor + y
+            enemy.collider:setPosition(dx, dy)
+            enemy.x, enemy.y = dx, dy
+
+            enemy.hp = enemy.hp - 1
+            if enemy.hp > 0 then enemy.state = 'dmg' end
+        end
+
+        ::continue::
+        if self.collider then
+            self.collider:destroy()
+            self.collider = nil
+        end
+    end
+
+    function skeleton.sword:mousepressed(dir)
+        self.dir = dir
+
+        clock.script(function(wait)
+            local colliderX, colliderY = 0, 0
+            local animSpd = skeleton.animation.intervals[2]
+            local change = 10
+
+            wait(animSpd)
+            self.strike = true
+
+            if self.dir == 'right' then
+                colliderX = skeleton.x
+                colliderY = skeleton.y - self.width - change*2
+            elseif self.dir == 'left' then
+                colliderX = skeleton.x - self.height
+                colliderY = skeleton.y - self.width - change*2
+            elseif self.dir == 'down' then
+                colliderX = skeleton.x - self.width - change
+                colliderY = skeleton.y - self.height/2
+            else
+                colliderX = skeleton.x + change
+                colliderY = skeleton.y - self.height
+            end
+
+            clock.during(skeleton.animation.intervals[3], function()
+                if self.dir == 'up' or self.dir == 'down' then
+                    self.collider = world:newRectangleCollider(colliderX, colliderY, self.width, self.height)
+                else
+                    self.collider = world:newRectangleCollider(colliderX, colliderY, self.height, self.width)
+                end
+            
+                self.collider:setCollisionClass('Sword')
+            end)
+
+            wait(animSpd)
+            self.strike = false
+            
+            if self.dir == 'right' then
+                colliderX = skeleton.x
+                colliderY = skeleton.y
+            elseif self.dir == 'left' then
+                colliderX = skeleton.x - self.height
+                colliderY = skeleton.y
+            elseif self.dir == 'down' then
+                colliderX = skeleton.x + change
+                colliderY = skeleton.y - self.height/2
+            else
+                colliderX = skeleton.x - self.width - change
+                colliderY = skeleton.y - self.height
+            end
+        end)
     end
 
     table.insert(Skeleton, skeleton)
@@ -98,35 +188,33 @@ function Skeleton:update(dt)
                 skeleton.strike = true
                 skeleton.collider:setLinearVelocity(1, 1)
 
-                local angle = math.atan2(dx, dy)
-                local radius = 5
-                local targetX = player.x + radius * math.cos(angle)
-                local targetY = player.y + radius * math.sin(angle)
+                local angle = math.atan2(dy, dx)
+                local radius = 30
+                local targetX = player.x - radius * math.cos(angle)
+                local targetY = player.y - radius * math.sin(angle)
 
-                clock.during(skeleton.animation.intervals[#skeleton.animation.frames], function()
-                    if skeleton.dir == 'right' then skeleton.animation = skeleton.animations.strikeRight
-                    else skeleton.animation = skeleton.animations.strikeLeft end
-                    skeleton.state = 'strike'
-                end)
+                if skeleton.dir == 'right' then skeleton.animation = skeleton.animations.strikeRight
+                else skeleton.animation = skeleton.animations.strikeLeft end
+                skeleton.state = 'strike'
 
-                local frames = skeleton.animations.strikeRight.intervals
-                skeleton.tween = flux.to(skeleton, frames[5], {x = targetX, y = targetY}):delay(frames[3]):onupdate(function()
+                local buffer = skeleton.animation.intervals[3]
+                skeleton.tween = flux.to(skeleton, skeleton.animation.totalDuration - buffer, {x = targetX, y = targetY}):delay(buffer):onupdate(function()
                     skeleton.collider:setPosition(skeleton.x, skeleton.y)
                 end):oncomplete(function()
-                    clock.during(0.5, function()
-                        local right, left = skeleton.animations.idleRight, skeleton.animations.idleLeft
-                        if skeleton.state == 'dmg' then right, left = skeleton.animations.dmgRight, skeleton.animations.dmgLeft
-                        else skeleton.state = 'idle' end
-                        if skeleton.dir == 'right' then skeleton.animation = right
-                        else skeleton.animation = left end
-                    end, function()
-                        skeleton.strike = false
-                        if skeleton.dir == 'right' then skeleton.animations.dmgRight:gotoFrame(1)
-                        else skeleton.animations.dmgLeft:gotoFrame(1) end
-                    end)
-
-                    if skeleton.dir == 'right' then skeleton.animations.strikeRight:gotoFrame(1)
-                    else skeleton.animations.strikeLeft:gotoFrame(1) end
+                    local after = function() skeleton.strike = false end
+                    skeleton.handle = clock.during(0.5, function()
+                        if skeleton.state == 'dmg' then
+                            clock.during(skeleton.animations.dmgRight.totalDuration, function()
+                                if skeleton.dir == 'right' then skeleton.animation = skeleton.animations.dmgRight
+                                else skeleton.animation = skeleton.animations.dmgLeft end
+                            end, after)
+                            clock.cancel(skeleton.handle)
+                        else
+                            skeleton.state = 'idle'
+                            if skeleton.dir == 'right' then skeleton.animation = skeleton.animations.idleRight
+                            else skeleton.animation = skeleton.animations.idleLeft end
+                        end
+                    end, after)
                 end)
             elseif not skeleton.strike then
                 if skeleton.dir == 'right' then skeleton.animation = skeleton.animations.right

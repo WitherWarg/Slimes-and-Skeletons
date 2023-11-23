@@ -3,11 +3,11 @@ return function(...)
     local entities = {}
 
     local function iterate(t)
-        for _, table in ipairs(t) do
-            if type(table.draw) == 'function' then
-                table.insert(entities, table)
+        for _, tbl in ipairs(t) do
+            if type(tbl.draw) == 'function' then
+                table.insert(entities, tbl)
             else
-                iterate(table)
+                iterate(tbl)
             end
         end
     end
