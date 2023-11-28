@@ -85,6 +85,6 @@ function love.keypressed(key)
         if pause then return end
         if key == 'h' then player.hearts:heal() end
 
-        if key == 'n' then Slime.new() end
+        if key == 'n' then Skeleton.new() end
     end
 end
