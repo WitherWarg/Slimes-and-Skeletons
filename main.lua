@@ -2,7 +2,6 @@ function love.load()
     require('/src/utilities/require')
 
     love.graphics.setDefaultFilter("nearest", "nearest")
-    math.randomseed(os.time())
     
     world = wf.newWorld(0, 0)
     world:setQueryDebugDrawing(true)
@@ -15,9 +14,8 @@ function love.load()
     player:load()
 
     function printTable(t, check)
-        check = check or true
         for key, value in pairs(t) do
-            if type(value) == 'table' and check then printTable(value) end
+            if type(value) == 'table' then printTable(value) end
             print(key, value)
         end
     end
@@ -27,10 +25,10 @@ function love.update(dt)
     if not pause then
         if not player.dead then
             world:update(dt)
-            flux.update(dt)
             if FPS then love.timer.sleep(1/FPS) end
         end
         
+        flux.update(dt)
         player:update(dt)
         Slime:update(dt)
         Skeleton:update(dt)

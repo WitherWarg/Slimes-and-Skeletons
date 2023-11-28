@@ -46,7 +46,6 @@ function player:load()
 end
 
 function player:update(dt)
-    self.sword:update(dt)
     self.dead = self.hearts.hearts == 0
 
     if self.dead and self.animation.position == 3 then
@@ -116,19 +115,19 @@ function player:update(dt)
         self.collider:setLinearVelocity(self.spd * dx, self.spd * dy)
     end
 
-    if self.collider:enter('Enemy') then
-        local collision_data = self.collider:getEnterCollisionData('Enemy')
-        local enemy = collision_data.collider:getObject()
-        if self.dead then return end
-
+    local function damage(dmg, collision_data)
         dx, dy = collision_data.contact:getNormal()
         local scalingFactor = -math.pow(10, 6)
-
+        
         local dx, dy = dx*scalingFactor, dy*scalingFactor
         self.collider:applyLinearImpulse(dx, dy)
-
-        self.hearts:damage()
+        
+        self.hearts:damage(dmg)
     end
+
+    if self.dead then return end
+    if self.collider:enter('SkeletonSword') then damage(2, self.collider:getEnterCollisionData('SkeletonSword'))
+    elseif self.collider:enter('Enemy') then damage(1, self.collider:getEnterCollisionData('Enemy')) end
 
     self.x, self.y = self.collider:getPosition()
 end
@@ -146,23 +145,21 @@ function player:mousepressed()
     angle = (angle + 360) % 360
     
     if 0 <= angle and angle < 90 then
-        self.animation = self.animations.strikeDown
+        self.animation = self.animations.strikeDown:clone()
         self.dir = 'down'
     elseif 90 <= angle and angle < 180 then
-        self.animation = self.animations.strikeLeft
+        self.animation = self.animations.strikeLeft:clone()
         self.dir = 'left'
     elseif 180 <= angle and angle < 270 then
-        self.animation = self.animations.strikeUp
+        self.animation = self.animations.strikeUp:clone()
         self.dir = 'up'
     else
-        self.animation = self.animations.strikeRight
+        self.animation = self.animations.strikeRight:clone()
         self.dir = 'right'
     end
-    
-    self.animation:gotoFrame(1)
-    
+
     clock.after(self.animation.intervals[#self.animation.frames], function() self.strike = false end)
-    self.sword:mousepressed(self.dir)
+    self.sword:strike()
 end
 
 player.hearts = {}
@@ -183,10 +180,19 @@ function player.hearts:load()
     end
 end
 
-function player.hearts:damage()
-    self.hp = self.hp - 1
+function player.hearts:damage(dmg)
+    if self.hp - dmg < 0 then
+        self.animations[self.hearts]:gotoFrame(#self.animations[self.hearts].frames)
+        self.hearts = self.hearts - 1
+        self.hp = 2
+        dmg = dmg - 2
+    end
+
+    if self.hearts == 0 then return end
+
+    self.hp = self.hp - dmg
     self.animations[self.hearts]:gotoFrame(3 - self.hp)
-    
+
     if self.hp == 0 then
         self.hearts = self.hearts - 1
         self.hp = 2
@@ -213,92 +219,70 @@ player.sword = {}
 function player.sword:load()
     self.width = 12
     self.height = 60
-    self.strike = false
 end
 
-function player.sword:update(dt)
-    if self.collider and self.collider:enter('Enemy') then
-        local collision_data = self.collider:getEnterCollisionData('Enemy')
-        local enemy = collision_data.collider:getObject()
-        if enemy.state ~= 'idle' then goto continue end
-
-        local dx, dy = 0, 0
-        if self.dir == 'up' then dx, dy = -1, math.random(0, -1)
-        elseif self.dir == 'down' then dx, dy = 1, math.random(0, 1)
-        elseif self.dir == 'right' then dx, dy = math.random(0, 1), 1
-        else dx, dy = math.random(0, -1), 1 end
-        local scalingFactor = 100
-
-        if enemy.dir == 'down' then dx = math.abs(dx)
-        elseif enemy.dir == 'up' then dx = -math.abs(dx)
-        else dy = math.abs(dy) end
-        
-        local x, y = enemy.collider:getPosition()
-        dx = dx * scalingFactor + x
-        dy = dy * scalingFactor + y
-        enemy.collider:setPosition(dx, dy)
-        enemy.x, enemy.y = dx, dy
-
-        enemy.hp = enemy.hp - 1
-        enemy.state = 'dmg'
-    end
-
-    ::continue::
-    if self.collider then
-        self.collider:destroy()
-        self.collider = nil
-    end
-end
-
-function player.sword:mousepressed(dir)
-    self.dir = dir
+function player.sword:strike()
+    self.dir = player.dir
 
     clock.script(function(wait)
-        local colliderX, colliderY = 0, 0
         local animSpd = player.animation.intervals[2]
         local change = 10
+        
+        local width, height = self.width, self.height
+        if self.dir == 'right' or self.dir == 'left' then width, height = self.height, self.width end
 
         wait(animSpd)
-        self.strike = true
-
         local cx, cy = 0, 0
-        if self.dir == 'right' then
-            cy = -self.width - change*2
-        elseif self.dir == 'left' then
-            cx, cy = -self.height, -self.width - change*2
-        elseif self.dir == 'down' then
-            cx, cy = -self.width - change, -self.height/2
-        else
-            cx, cy = change, -self.height
-        end
+        if self.dir == 'right' then cy = -height - change*2
+        elseif self.dir == 'left' then cx, cy = -width, -height - change*2
+        elseif self.dir == 'down' then cx, cy = -width - change, -height/2
+        else cx, cy = change, -height end
 
-        colliderX, colliderY = player.x + cx, player.y + cy
-
-        clock.during(player.animation.intervals[3], function()
-            if self.dir == 'up' or self.dir == 'down' then
-                self.collider = world:newRectangleCollider(player.x + cx, player.y + cy, self.width, self.height)
-            else
-                self.collider = world:newRectangleCollider(player.x + cx, player.y + cy, self.height, self.width)
-            end
         
-            self.collider:setCollisionClass('Sword')
+        self.collider = world:newRectangleCollider(player.x + cx, player.y + cy, width, height)
+        self.collider:setCollisionClass('Sword')
+
+        clock.during(animSpd*2, function()
+            if self.collider and self.collider:enter('Enemy') then
+                local collision_data = self.collider:getEnterCollisionData('Enemy')
+                local enemy = collision_data.collider:getObject()
+                if not enemy or enemy.state ~= 'idle' then return end
+                
+                local dx, dy = 0, 0
+                math.randomseed(os.time())
+
+                if self.dir == 'up' then dx, dy = -1, math.random(0, -1)
+                elseif self.dir == 'down' then dx, dy = 1, math.random(0, 1)
+                elseif self.dir == 'right' then dx, dy = math.random(0, 1), 1
+                else dx, dy = math.random(0, -1), 1 end
+                local scalingFactor = 100
+                
+                if enemy.dir == 'down' then dx = math.abs(dx)
+                elseif enemy.dir == 'up' then dx = -math.abs(dx)
+                else dy = math.abs(dy) end
+                
+                local x, y = enemy.collider:getPosition()
+                dx = dx * scalingFactor + x
+                dy = dy * scalingFactor + y
+                enemy.collider:setPosition(dx, dy)
+                enemy.x, enemy.y = dx, dy
+        
+                enemy.state = 'dmg'
+                enemy.hp = enemy.hp - 1
+            end
         end)
 
         wait(animSpd)
-        self.strike = false
-        
         cx, cy = 0, 0
-        if self.dir == 'right' then
-            cx = change
-        elseif self.dir == 'left' then
-            cx = -self.height
-        elseif self.dir == 'down' then
-            cx, cy = change, -self.height/2
-        else
-            cx, cy = -self.width - change, -self.height
-        end
+        if self.dir == 'right' then cx = width/2
+        elseif self.dir == 'left' then cx = -width/2
+        elseif self.dir == 'down' then cx = change
+        else cx, cy = -change, -height/2 end
 
-        colliderX, colliderY = player.x + cx, player.y + cy
+        self.collider:setPosition(player.x + cx, player.y + cy)
+
+        wait(animSpd)
+        destroyObject(self)
     end)
 end
 

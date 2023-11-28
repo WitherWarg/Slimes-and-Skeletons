@@ -1,10 +1,5 @@
 return function(obj)
-    if obj.collider then
-        obj.collider:destroy()
-        obj.collider = nil
-    end
-    if obj.tween then
-        obj.tween:stop()
-        obj.tween = nil
-    end
+    if obj.tween then obj.tween:stop() end
+
+    if not obj.collider:isDestroyed() then obj.collider:destroy() end
 end
