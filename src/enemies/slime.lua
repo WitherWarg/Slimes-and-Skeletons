@@ -1,7 +1,7 @@
 slimes = {}
 
 function new(_, x, y)
-    local stats = { x = x, y = y, aggro = 300, hp = 4, spd = 100, width = 14, height = 11 }
+    local stats = { x = x, y = y, aggro = 140, radius = 5, strike_distance = 30, hp = 4, spd = 50, width = 14, height = 11 }
     local spriteData = { path = '/sprites/characters/slime.png', rows = 7, columns = 5 }
     local animations = {
         move = { frames = '1-6', row = 2, animSpd = 0.13 },

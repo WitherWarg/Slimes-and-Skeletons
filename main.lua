@@ -5,16 +5,23 @@ function love.load()
     
     world = wf.newWorld(0, 0)
     world:setQueryDebugDrawing(true)
-    WIDTH, HEIGHT = love.graphics.getDimensions()
-    FPS = nil
-    SX, SY = 1, 1
-    cam = camera()
-
     createCollisionClasses()
-    player:load()
+    FPS = nil
+
+    SX, SY = 2, 2
+    WIDTH, HEIGHT = love.graphics.getDimensions()
+    WIDTH, HEIGHT = WIDTH/SX, HEIGHT/SY
+    cam = camera()
+    cam:zoom(SX)
 
     Demo = sti('/maps/levels/Demo.lua')
-    printTable(Demo)
+    
+    player:load(Demo.tilewidth * Demo.width / 2, Demo.tileheight * Demo.height / 2)
+
+    for _, obj in pairs(Demo.layers["Walls"].objects) do
+        local wall = world:newBSGRectangleCollider(obj.x, obj.y, obj.width, obj.height, 10)
+        wall:setType('static')
+    end
 end
 
 function love.update(dt)
@@ -28,7 +35,11 @@ function love.update(dt)
         player:update(dt)
         slime:update(dt)
         clock.update(dt)
+
         cam:lookAt(player.x, player.y)
+        local w, h = Demo.tilewidth * Demo.width, Demo.tileheight * Demo.height
+        cam.x = math.max(math.min(cam.x, w - WIDTH/2), WIDTH/2)
+        cam.y = math.max(math.min(cam.y, h - HEIGHT/2), HEIGHT/2)
     end
 end
 
@@ -38,24 +49,24 @@ function love.draw()
     end
     
     cam:attach()
-    --[[for key, value in pairs(Demo.layers) do
-        if type(key) == 'string' then
-            Demo:draw]]
+    for key, value in pairs(Demo.layers) do
+        if type(key) == 'number' and value.type == 'tilelayer' then
+            value:draw()
+        end
+    end
 
     if player.dead then
         reset()
-        drawEntities(player)
         deathScreen()
-    else
-        reset()
-        drawEntities(player, slime)
-        --world:draw()
     end
+    reset()
+    drawEntities(player, slime)
+    --world:draw()
     cam:detach()
     
     love.graphics.scale(SX, SY)
     reset()
-    player.hearts:draw()
+    player.hearts:draw(reset)
 end
 
 function love.resize(w, h)

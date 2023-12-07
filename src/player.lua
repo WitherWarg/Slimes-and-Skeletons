@@ -1,7 +1,7 @@
 player = {}
 
 function player:load(x, y)
-    self.scale = 3
+    self.scale = 3/SX
     self.x = x or WIDTH/2
     self.y = y or HEIGHT/2
     self.spd = 240
@@ -36,7 +36,7 @@ function player:load(x, y)
         self.animation = self.animations.idleDown
         self.dir = 'down'
 
-    self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, 5)
+    self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, 5/SX)
     self.collider:setCollisionClass('Player')
     self.collider:setFixedRotation(true)
 
@@ -245,9 +245,13 @@ function player.hearts:damage(dmg)
     end
 end
 
-function player.hearts:draw()
+function player.hearts:draw(reset)
+    love.graphics.setColor(0,0,0,0.3)
+    love.graphics.rectangle("fill", WIDTH - (self.frameWidth + 10)*#self.animations - 15, 3, (self.frameWidth + 10)*#self.animations+5, self.frameHeight*SX)
+
+    reset()
     for i, animation in ipairs(self.animations) do
-        animation:draw(self.spriteSheet, (self.frameWidth+5)*(i-1)*2 + 600, 20, nil, 2, 2)
+        animation:draw(self.spriteSheet, WIDTH - (self.frameWidth + 10)*(#self.animations-i+1) - 10, 10, nil, 1.2, 1.2)
     end
 end
 

@@ -2,7 +2,7 @@ enemy = {}
 enemy.__index = enemy
 
 --[[
-    local stats = { x, y, scale, hp, spd, width, height }
+    local stats = { x, y, scale, aggro, radius, strike_distance, hp, spd, width, height }
     local spriteData = { path, rows, columns }
     local animations = {
         name = { frames, row, animSpd, onLoop },
@@ -15,6 +15,8 @@ function enemy.new(stats, spriteData, animations)
 
     self.scale = player.scale
     self.aggro = stats.aggro
+    self.radius = stats.radius
+    self.strikeDistance = stats.strike_distance
     self.hp = stats.hp
     self.x = stats.x or player.x + self.aggro
     self.y = stats.y or player.y - self.aggro
@@ -28,7 +30,7 @@ function enemy.new(stats, spriteData, animations)
     self.frameHeight = self.spriteSheet:getHeight() / spriteData.columns
     local g = anim8.newGrid(self.frameWidth, self.frameHeight, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
 
-    self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, 10)
+    self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, 10/SX)
     self.collider:setFixedRotation(true)
     self.collider:setCollisionClass('Enemy')
 
@@ -76,7 +78,7 @@ function enemy:update(dt)
     local length = math.sqrt(dx * dx + dy * dy)
 
     if length < self.aggro then
-        if length < math.sqrt(2 * 100 * 100) and not self.strike then
+        if length < math.sqrt(2 * self.strikeDistance * self.strikeDistance) and not self.strike then
             self.strike = true
             self.collider:setLinearVelocity(1, 1)
             self.animation = self.animations.strike
@@ -93,9 +95,8 @@ function enemy:update(dt)
 
                 dx, dy = player.x - self.x, player.y - self.y
                 angle = math.atan2(dy, dx)
-                radius = 5
-                targetX = player.x - radius * math.cos(angle)
-                targetY = player.y - radius * math.sin(angle)
+                targetX = player.x - self.radius * math.cos(angle)
+                targetY = player.y - self.radius * math.sin(angle)
             end, function()
                 self.tween = flux.to(self, self.animation.totalDuration - self.animation.intervals[3], {x = targetX, y = targetY}):onupdate(function()
                     self.state = 'strike'
@@ -137,9 +138,9 @@ end
 function enemy:collision()
     if self.collider:enter('Sword') and (self.state == 'idle' or self.animation.position >= #self.animation.frames - 2) then
         local collision_data = self.collider:getEnterCollisionData('Sword')
-        local dx, dy = collision_data.contact:getNormal()
-        local s = 200
-        self.collider:applyLinearImpulse(-dx*s, -dy*s)
+        local nx, ny = collision_data.contact:getNormal()
+        local s = math.pow(10, 27)
+        self.collider:applyLinearImpulse(-nx*s, -ny*s)
         clock.during(self.animation.intervals[#self.animation.frames - 2], function()
             self.x, self.y = self.collider:getPosition()
         end)
