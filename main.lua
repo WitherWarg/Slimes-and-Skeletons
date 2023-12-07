@@ -13,12 +13,8 @@ function love.load()
     createCollisionClasses()
     player:load()
 
-    function printTable(t, check)
-        for key, value in pairs(t) do
-            if type(value) == 'table' then printTable(value) end
-            print(key, value)
-        end
-    end
+    Demo = sti('/maps/levels/Demo.lua')
+    printTable(Demo)
 end
 
 function love.update(dt)
@@ -30,8 +26,7 @@ function love.update(dt)
         
         flux.update(dt)
         player:update(dt)
-        Slime:update(dt)
-        Skeleton:update(dt)
+        slime:update(dt)
         clock.update(dt)
         cam:lookAt(player.x, player.y)
     end
@@ -41,22 +36,23 @@ function love.draw()
     local function reset()
         love.graphics.setColor(hsl(0, 0, 100))
     end
-
-    -- Space for the map
-    love.graphics.setColor(hsl(140, 90, 20))
-    love.graphics.rectangle("fill", 0, 0, WIDTH, HEIGHT)
-
+    
     cam:attach()
+    --[[for key, value in pairs(Demo.layers) do
+        if type(key) == 'string' then
+            Demo:draw]]
+
     if player.dead then
         reset()
+        drawEntities(player)
         deathScreen()
     else
         reset()
-        drawEntities(player, Slime, Skeleton)
+        drawEntities(player, slime)
         --world:draw()
     end
     cam:detach()
-
+    
     love.graphics.scale(SX, SY)
     reset()
     player.hearts:draw()
@@ -83,6 +79,6 @@ function love.keypressed(key)
         if pause then return end
         if key == 'h' then player.hearts:heal() end
 
-        if key == 'n' then Skeleton.new() end
+        if key == 'n' then slime() end
     end
 end

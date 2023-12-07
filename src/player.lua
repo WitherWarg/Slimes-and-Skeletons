@@ -1,9 +1,9 @@
 player = {}
 
-function player:load()
+function player:load(x, y)
     self.scale = 3
-    self.x = WIDTH/2
-    self.y = HEIGHT/2
+    self.x = x or WIDTH/2
+    self.y = y or HEIGHT/2
     self.spd = 240
 
     self.width = 7 * self.scale
@@ -11,8 +11,7 @@ function player:load()
 
     
     self.spriteSheet = love.graphics.newImage('/sprites/characters/player.png')
-    self.frameWidth = self.spriteSheet:getWidth()/6
-    self.frameHeight = self.spriteSheet:getHeight()/10
+    self.frameWidth, self.frameHeight = self.spriteSheet:getWidth()/6, self.spriteSheet:getHeight()/10
     local g = anim8.newGrid(self.frameWidth, self.frameHeight, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
     
     self.animations = {}        
@@ -42,7 +41,6 @@ function player:load()
     self.collider:setFixedRotation(true)
 
     self.hearts:load()
-    self.sword:load()
 end
 
 function player:update(dt)
@@ -139,11 +137,13 @@ end
 function player:mousepressed()
     self.strike = true
     
-    local dx = love.mouse.getX() - WIDTH/2
-    local dy = love.mouse.getY() - HEIGHT/2
+    local x, y = cam:mousePosition()
+    local dx = x - player.x
+    local dy = y - player.y
     local angle = math.deg(math.atan2(dy, dx)) - 45
     angle = (angle + 360) % 360
     
+    local polygon, width, height = {}, self.frameWidth*self.scale/4, self.frameHeight*self.scale/3
     if 0 <= angle and angle < 90 then
         self.animation = self.animations.strikeDown:clone()
         self.dir = 'down'
@@ -158,8 +158,54 @@ function player:mousepressed()
         self.dir = 'right'
     end
 
+    local polygon, width, height
+    if self.dir == 'right' or self.dir == 'left' then
+        width, height = self.frameWidth*self.scale/4, self.frameHeight*self.scale/3
+
+        if self.dir == 'right' then
+            polygon = {
+                self.x + width, self.y,
+                self.x, self.y - height,
+                self.x, self.y + height,
+            }
+        else
+            polygon = {
+                self.x - width, self.y,
+                self.x, self.y - height,
+                self.x, self.y + height,
+            }
+        end
+    else
+        height, width = self.frameWidth*self.scale/4, self.frameHeight*self.scale/3
+
+        if self.dir == 'down' then
+            polygon = {
+                self.x + width, self.y,
+                self.x - width, self.y,
+                self.x, self.y + height,
+            }
+        else
+            polygon = {
+                self.x + width, self.y,
+                self.x - width, self.y,
+                self.x, self.y - height*1.5,
+            }
+        end
+    end
+
+    
     clock.after(self.animation.intervals[#self.animation.frames], function() self.strike = false end)
-    self.sword:strike()
+    
+    clock.script(function(wait)
+        wait(self.animation.intervals[2])
+        
+        self.swordCollider = world:newPolygonCollider(polygon)
+        self.swordCollider:setType('static')
+        self.swordCollider:setCollisionClass('Sword')
+
+        wait(self.animation.intervals[2])
+        self.swordCollider:destroy()
+    end)
 end
 
 player.hearts = {}
@@ -212,78 +258,6 @@ function player.hearts:heal()
     for i, animation in ipairs(self.animations) do
         animation:gotoFrame(1)
     end
-end
-
-player.sword = {}
-
-function player.sword:load()
-    self.width = 12
-    self.height = 60
-end
-
-function player.sword:strike()
-    self.dir = player.dir
-
-    clock.script(function(wait)
-        local animSpd = player.animation.intervals[2]
-        local change = 10
-        
-        local width, height = self.width, self.height
-        if self.dir == 'right' or self.dir == 'left' then width, height = self.height, self.width end
-
-        wait(animSpd)
-        local cx, cy = 0, 0
-        if self.dir == 'right' then cy = -height - change*2
-        elseif self.dir == 'left' then cx, cy = -width, -height - change*2
-        elseif self.dir == 'down' then cx, cy = -width - change, -height/2
-        else cx, cy = change, -height end
-
-        
-        self.collider = world:newRectangleCollider(player.x + cx, player.y + cy, width, height)
-        self.collider:setCollisionClass('Sword')
-
-        clock.during(animSpd*2, function()
-            if self.collider and self.collider:enter('Enemy') then
-                local collision_data = self.collider:getEnterCollisionData('Enemy')
-                local enemy = collision_data.collider:getObject()
-                if not enemy or enemy.state ~= 'idle' then return end
-                
-                local dx, dy = 0, 0
-                math.randomseed(os.time())
-
-                if self.dir == 'up' then dx, dy = -1, math.random(0, -1)
-                elseif self.dir == 'down' then dx, dy = 1, math.random(0, 1)
-                elseif self.dir == 'right' then dx, dy = math.random(0, 1), 1
-                else dx, dy = math.random(0, -1), 1 end
-                local scalingFactor = 100
-                
-                if enemy.dir == 'down' then dx = math.abs(dx)
-                elseif enemy.dir == 'up' then dx = -math.abs(dx)
-                else dy = math.abs(dy) end
-                
-                local x, y = enemy.collider:getPosition()
-                dx = dx * scalingFactor + x
-                dy = dy * scalingFactor + y
-                enemy.collider:setPosition(dx, dy)
-                enemy.x, enemy.y = dx, dy
-        
-                enemy.state = 'dmg'
-                enemy.hp = enemy.hp - 1
-            end
-        end)
-
-        wait(animSpd)
-        cx, cy = 0, 0
-        if self.dir == 'right' then cx = width/2
-        elseif self.dir == 'left' then cx = -width/2
-        elseif self.dir == 'down' then cx = change
-        else cx, cy = -change, -height/2 end
-
-        self.collider:setPosition(player.x + cx, player.y + cy)
-
-        wait(animSpd)
-        destroyObject(self)
-    end)
 end
 
 return player
