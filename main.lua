@@ -1,5 +1,5 @@
 function love.load()
-    require('/src/utilities/require')
+    require('/src/require')
 
     love.graphics.setDefaultFilter("nearest", "nearest")
     
@@ -8,7 +8,7 @@ function love.load()
     createCollisionClasses()
     FPS = nil
 
-    SX, SY = 2, 2
+    SX, SY = 3, 3
     WIDTH, HEIGHT = love.graphics.getDimensions()
     WIDTH, HEIGHT = WIDTH/SX, HEIGHT/SY
     cam = camera()
@@ -20,6 +20,7 @@ function love.load()
 
     for _, obj in pairs(Demo.layers["Walls"].objects) do
         local wall = world:newBSGRectangleCollider(obj.x, obj.y, obj.width, obj.height, 10)
+        wall:setCollisionClass('Wall')
         wall:setType('static')
     end
 end
@@ -49,31 +50,29 @@ function love.draw()
     end
     
     cam:attach()
-    for key, value in pairs(Demo.layers) do
-        if type(key) == 'number' and value.type == 'tilelayer' then
-            value:draw()
+        for key, value in pairs(Demo.layers) do
+            if type(key) == 'number' and value.type == 'tilelayer' then
+                value:draw()
+            end
         end
-    end
 
-    if player.dead then
+        if player.dead then
+            reset()
+            deathScreen()
+        end
+
         reset()
-        deathScreen()
-    end
-    reset()
-    drawEntities(player, slime)
-    --world:draw()
+        drawEntities(player, slime)
+        --world:draw()
     cam:detach()
     
     love.graphics.scale(SX, SY)
     reset()
     player.hearts:draw(reset)
-end
 
-function love.resize(w, h)
-    cam:zoom((w/WIDTH+h/HEIGHT)/2)
-    
-    SX, SY = SX * w/WIDTH, SY * h/HEIGHT
-    WIDTH, HEIGHT = w, h
+    reset()
+    if #slime == 0 then return end
+    love.graphics.print(slime[#slime].state)
 end
 
 function love.mousepressed(x, y, button, istouch, presses)

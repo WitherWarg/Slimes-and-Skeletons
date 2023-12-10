@@ -1,7 +1,7 @@
 player = {}
 
 function player:load(x, y)
-    self.scale = 3/SX
+    self.scale = 3/2
     self.x = x or WIDTH/2
     self.y = y or HEIGHT/2
     self.spd = 240
@@ -36,7 +36,7 @@ function player:load(x, y)
         self.animation = self.animations.idleDown
         self.dir = 'down'
 
-    self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, 5/SX)
+    self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, 2.5)
     self.collider:setCollisionClass('Player')
     self.collider:setFixedRotation(true)
 
@@ -143,7 +143,6 @@ function player:mousepressed()
     local angle = math.deg(math.atan2(dy, dx)) - 45
     angle = (angle + 360) % 360
     
-    local polygon, width, height = {}, self.frameWidth*self.scale/4, self.frameHeight*self.scale/3
     if 0 <= angle and angle < 90 then
         self.animation = self.animations.strikeDown:clone()
         self.dir = 'down'
@@ -158,54 +157,7 @@ function player:mousepressed()
         self.dir = 'right'
     end
 
-    local polygon, width, height
-    if self.dir == 'right' or self.dir == 'left' then
-        width, height = self.frameWidth*self.scale/4, self.frameHeight*self.scale/3
-
-        if self.dir == 'right' then
-            polygon = {
-                self.x + width, self.y,
-                self.x, self.y - height,
-                self.x, self.y + height,
-            }
-        else
-            polygon = {
-                self.x - width, self.y,
-                self.x, self.y - height,
-                self.x, self.y + height,
-            }
-        end
-    else
-        height, width = self.frameWidth*self.scale/4, self.frameHeight*self.scale/3
-
-        if self.dir == 'down' then
-            polygon = {
-                self.x + width, self.y,
-                self.x - width, self.y,
-                self.x, self.y + height,
-            }
-        else
-            polygon = {
-                self.x + width, self.y,
-                self.x - width, self.y,
-                self.x, self.y - height*1.5,
-            }
-        end
-    end
-
-    
     clock.after(self.animation.intervals[#self.animation.frames], function() self.strike = false end)
-    
-    clock.script(function(wait)
-        wait(self.animation.intervals[2])
-        
-        self.swordCollider = world:newPolygonCollider(polygon)
-        self.swordCollider:setType('static')
-        self.swordCollider:setCollisionClass('Sword')
-
-        wait(self.animation.intervals[2])
-        self.swordCollider:destroy()
-    end)
 end
 
 player.hearts = {}
@@ -247,7 +199,7 @@ end
 
 function player.hearts:draw(reset)
     love.graphics.setColor(0,0,0,0.3)
-    love.graphics.rectangle("fill", WIDTH - (self.frameWidth + 10)*#self.animations - 15, 3, (self.frameWidth + 10)*#self.animations+5, self.frameHeight*SX)
+    love.graphics.rectangle("fill", WIDTH - (self.frameWidth + 10)*#self.animations - 15, 3, (self.frameWidth + 10)*#self.animations+5, self.frameHeight*2)
 
     reset()
     for i, animation in ipairs(self.animations) do
