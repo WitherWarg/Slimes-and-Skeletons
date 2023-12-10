@@ -13,12 +13,15 @@ function new(_, statData, spriteData, animations)
     local self = {}
     setmetatable(self, enemy)
 
+    self.x, self.y = statData.x, statData.y
+    self.ox, self.oy = self.x, self.y
+    
     self.aggro = statData.aggro
     self.attackAggro = statData.attackAggro
-    self.hp = statData.hp
-    self.x = statData.x or player.x + self.aggro
-    self.y = statData.y or player.y - self.aggro
+    
     self.spd = statData.spd
+    self.hp = statData.hp
+    self.dir = 'right'
 
     self.width = statData.width * player.scale
     self.height = statData.height * player.scale
@@ -38,10 +41,6 @@ function new(_, statData, spriteData, animations)
         if data.flipH then animation:flipH() end
         self.animations[key] = animation
     end
-
-    self.animation = self.animations.idle
-    self.dir = 'right'
-    self.state = 'idle'
 
     return self
 end
@@ -64,6 +63,11 @@ function enemy:update(dt)
 
     if self.currentState ~= self.state then
         self.currentState = self.state
+        
+        if self.state == 'idle' then
+            self.ox, self.oy = self.x, self.y
+        end
+        
         self.animation:gotoFrame(1)
     end
 
@@ -152,7 +156,7 @@ function enemy:getState()
 
     if self.hp == 0 then
         return 'dead'
-    elseif (self.state == 'moving' or #colliders == 0) and distanceFromPlayer < self.aggro then
+    elseif #colliders == 0 and (distanceFromPlayer < self.aggro or self.state == 'moving') then
         if self.x < player.x then
             self.dir = 'right'
         else

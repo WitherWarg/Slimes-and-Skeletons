@@ -1,5 +1,5 @@
 function love.load()
-    require('/src/require')
+    require('/src/utilities/require')
 
     love.graphics.setDefaultFilter("nearest", "nearest")
     
@@ -69,10 +69,6 @@ function love.draw()
     love.graphics.scale(SX, SY)
     reset()
     player.hearts:draw(reset)
-
-    reset()
-    if #slime == 0 then return end
-    love.graphics.print(slime[#slime].state)
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
@@ -89,6 +85,6 @@ function love.keypressed(key)
         if pause then return end
         if key == 'h' then player.hearts:heal() end
 
-        if key == 'n' then slime() end
+        if key == 'n' then skeleton(player.x + 200, player.y) end
     end
 end
