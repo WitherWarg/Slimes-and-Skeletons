@@ -8,40 +8,39 @@ function love.load()
     createCollisionClasses()
     FPS = nil
 
-    SX, SY = 3, 3
-    WIDTH, HEIGHT = love.graphics.getDimensions()
-    WIDTH, HEIGHT = WIDTH/SX, HEIGHT/SY
-    cam = camera()
-    cam:zoom(SX)
-
     Demo = sti('/maps/levels/Demo.lua')
     
-    player:load(Demo.tilewidth * Demo.width / 2, Demo.tileheight * Demo.height / 2)
+    local Player = Demo.layers["Player"].objects[1]
+    player:spawn(Player.x + Player.width/2, Player.y + Player.height/2)
 
     for _, obj in pairs(Demo.layers["Walls"].objects) do
         local wall = world:newBSGRectangleCollider(obj.x, obj.y, obj.width, obj.height, 10)
         wall:setCollisionClass('Wall')
         wall:setType('static')
     end
+
+    SX, SY = 3, 3
+    WIDTH, HEIGHT = love.graphics.getDimensions()
+    WIDTH, HEIGHT = WIDTH/SX, HEIGHT/SY
+    cam = camera()
+    cam:zoom(SX)
 end
 
 function love.update(dt)
-    if not pause then
-        if not player.dead then
-            world:update(dt)
-            if FPS then love.timer.sleep(1/FPS) end
-        end
-        
-        flux.update(dt)
-        player:update(dt)
-        slime:update(dt)
-        clock.update(dt)
-
-        cam:lookAt(player.x, player.y)
-        local w, h = Demo.tilewidth * Demo.width, Demo.tileheight * Demo.height
-        cam.x = math.max(math.min(cam.x, w - WIDTH/2), WIDTH/2)
-        cam.y = math.max(math.min(cam.y, h - HEIGHT/2), HEIGHT/2)
+    if pause then return end
+    if FPS then
+        love.timer.sleep(1/FPS)
     end
+    
+    world:update(dt)
+    updateAll(dt, player, slime, skeleton)
+    flux.update(dt)
+    clock.update(dt)
+
+    cam:lookAt(player.x, player.y)
+    local w, h = Demo.tilewidth * Demo.width, Demo.tileheight * Demo.height
+    cam.x = math.max(math.min( cam.x, w - WIDTH/2 ), WIDTH/2)
+    cam.y = math.max(math.min( cam.y, h - HEIGHT/2 ), HEIGHT/2)
 end
 
 function love.draw()
@@ -62,29 +61,27 @@ function love.draw()
         end
 
         reset()
-        drawEntities(player, slime)
+        drawEntities(player, slime, skeleton)
         --world:draw()
     cam:detach()
-    
-    love.graphics.scale(SX, SY)
+
     reset()
-    player.hearts:draw(reset)
+    local font = love.graphics.newFont(15*SX)
+    love.graphics.setFont(font)
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
     if pause then return end
-    if button == 1 and not player.strike then player:mousepressed() end
+
+    if button == 1 then
+        player:mousepressed()
+    end
 end
 
 function love.keypressed(key)
-    if player.dead and not pause then
-        if key == 'space' and player.animation.position == 3 then gameStart() end
-    else
-        if key == 'p' or key == 'escape' then pause = not pause end
-        
-        if pause then return end
-        if key == 'h' then player.hearts:heal() end
+    if key == 'p' or key == 'escape' then pause = not pause end
+    
+    if pause then return end
 
-        if key == 'n' then skeleton(player.x + 200, player.y) end
-    end
+    if key == 'n' then slime(player.x + 240, player.y) end
 end

@@ -12,6 +12,7 @@ hsl = require('/src/functions/hsl')
 deathScreen = require('/src/functions/deathScreen')
 destroyObject = require('/src/functions/destroyObject')
 drawEntities = require('/src/functions//drawEntities')
+updateAll = require('/src/functions/updateAll')
 printTable = require('/src/functions/printTable')
 
 enemy = require('/src/enemies/enemy')

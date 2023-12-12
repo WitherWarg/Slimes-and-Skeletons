@@ -1,15 +1,7 @@
 enemy = {}
 enemy.__index = enemy
 
---[[
-    local statData = { x, y, scale, aggro, attackAggro, hp, spd, width, height }
-    local spriteData = { path, rows, columns }
-    local animations = {
-        name = { frames, row, animSpd, onLoop },
-    }
-]]
-
-function new(_, statData, spriteData, animations)
+local function new(statData, spriteData, animations)
     local self = {}
     setmetatable(self, enemy)
 
@@ -31,15 +23,13 @@ function new(_, statData, spriteData, animations)
     self.frameHeight = self.spriteSheet:getHeight() / spriteData.columns
     local g = anim8.newGrid(self.frameWidth, self.frameHeight, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
 
-    self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, 5)
+    self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, spriteData.colliderCut)
     self.collider:setFixedRotation(true)
     self.collider:setCollisionClass('Enemy')
 
     self.animations = {}
     for key, data in pairs(animations) do
-        local animation = anim8.newAnimation(g(data.frames, data.row), data.animSpd or 0.2, data.onLoop)
-        if data.flipH then animation:flipH() end
-        self.animations[key] = animation
+        self.animations[key] = anim8.newAnimation(g(data.frames, data.row), data.animSpd or 0.2, data.onLoop)
     end
 
     return self
@@ -50,24 +40,23 @@ function enemy:update(dt)
     self.state = self:getState()
 
     if self.state == 'idle' then
-        self.animation = self:idle(dt)
+        self.animation = self:idle()
+    elseif self.state == 'attack' then
+        self.animation = self:attack()
     elseif self.state == 'moving' then
-        self.animation = self:moving(dt)
+        self.animation = self:moving()
     elseif self.state == 'dmg' then
-        self.animation = self:dmg(dt)
-    elseif self.state == 'attack' and not self.attacking then
-        self.animation = self:attack(dt)
+        self.animation = self:dmg()
     elseif self.state == 'dead' then
-        self.animation = self:dead(dt)
+        self.animation = self:dead()
     end
 
-    if self.currentState ~= self.state then
-        self.currentState = self.state
-        
+    if self.currentState ~= self.state and self.state ~= '' then
         if self.state == 'idle' then
             self.ox, self.oy = self.x, self.y
         end
         
+        self.currentState = self.state
         self.animation:gotoFrame(1)
     end
 
@@ -79,73 +68,82 @@ function enemy:draw()
     self.animation:draw(self.spriteSheet, self.x, self.y, nil, player.scale, player.scale, self.frameWidth/2, self.frameHeight/2)
 end
 
-function enemy:idle(dt)
+
+function enemy:idle()
     self.collider:setLinearVelocity(0, 0)
 
     return self.animations.idle
 end
 
-function enemy:moving(dt)
+function enemy:moving()
     local angle = math.atan2(player.y - self.y, player.x - self.x)
     self.collider:setLinearVelocity(self.spd * math.cos(angle), self.spd * math.sin(angle))
 
     return self.animations.moving
 end
 
-function enemy:attack(dt)
+function enemy:attack()
     self.attacking = true
 
     local intervals = self.animations.attack.intervals
     local frames = #self.animations.attack.frames + 1
-    local angle = 0
-    local spd = 0
+    local attackFunction, angle, spd
 
-    clock.script(function(wait)
-        clock.during(intervals[3], function()
-            local dx, dy = self.x - player.x, self.y - player.y
-            
-            local distanceFromPlayer = math.sqrt( dx*dx + dy*dy )
-            distanceFromPlayer = ( math.abs(distanceFromPlayer) + 100 ) * distanceFromPlayer / math.abs(distanceFromPlayer)
-            
-            spd = distanceFromPlayer / (intervals[frames] - intervals[2])
-            self.collider:setLinearVelocity(0, 0)
-
-            angle = math.atan2(player.y - self.y, player.x - self.x)
-        end)
-
-        wait(intervals[3])
-
-        local resetAttack = function()
-            clock.after(2, function()
-                self.attacking = false
-            end)
-        end
-        local t1, t2
+    local calculationBeforeAttack = clock.during(intervals[4], function()
         
-        t1 = clock.during(intervals[frames] - intervals[3], function()
+        local dx, dy = self.x - player.x, self.y - player.y
+        if math.sqrt( dx*dx + dy*dy ) > 150 then
+            return
+        end
+
+        local distanceFromPlayer = math.sqrt( dx*dx + dy*dy )
+        distanceFromPlayer = ( math.abs(distanceFromPlayer) + self.attackAggro ) * distanceFromPlayer / math.abs(distanceFromPlayer)
+        spd = distanceFromPlayer / (intervals[frames] - intervals[4])
+        angle = math.atan2(player.y - self.y, player.x - self.x)
+        
+        self.collider:setLinearVelocity(0, 0)
+
+        if self.x < player.x then
+            self.dir = 'right'
+        else
+            self.dir = 'left'
+        end
+
+    end, function()
+
+        attackFunction = clock.during(intervals[frames] - intervals[4], function()
             self.collider:setLinearVelocity(spd * math.cos(angle), spd * math.sin(angle))
-        end)
+        end, function() self.attacking = false end)
 
-        t2 = clock.during(intervals[frames] - intervals[3] + 2, function()
-            if self.collider:enter('Player') then
-                self.collider:setLinearVelocity(0, 0)
-                resetAttack()
-
-                clock.cancel(t1)
-                clock.cancel(t2)
-            end
-        end, resetAttack)
     end)
 
-    self.animations.attack:gotoFrame(1)
-    return self.animations.attack
+
+    clock.during(intervals[frames], function()
+        if self.collider:enter('Player') then
+            self.attacking = false
+            self.collider:setLinearVelocity(0, 0)
+            
+            local status, errorMessage = pcall(function()
+                clock.cancel(attackFunction)
+                clock.cancel(calculationBeforeAttack)
+            end)
+
+            if not status and errorMessage ~= '/libraries/hump/timer.lua:89: table index is nil' then
+                error(errorMessage)
+            end
+
+            return
+        end
+    end)
+
+    return self.animations.attack:clone()
 end
 
-function enemy:dmg(dt)
+function enemy:dmg()
     return self.animations.dmg
 end
 
-function enemy:dead(dt)
+function enemy:dead()
     return self.animations.dead
 end
 
@@ -156,7 +154,11 @@ function enemy:getState()
 
     if self.hp == 0 then
         return 'dead'
-    elseif #colliders == 0 and (distanceFromPlayer < self.aggro or self.state == 'moving') then
+    elseif #colliders == 0 and (distanceFromPlayer < self.aggro or self.currentState == 'moving' or self.currentState == 'attack') then
+        if self.attacking then
+            return ''
+        end
+        
         if self.x < player.x then
             self.dir = 'right'
         else
@@ -173,10 +175,16 @@ function enemy:getState()
     end
 end
 
+function enemy:isOnScreen()
+    local boolX = cam.x - WIDTH / 2 < self.x and self.x < cam.x + WIDTH / 2
+    local boolY = cam.y - HEIGHT / 2 < self.y and self.y < cam.y + HEIGHT / 2
+    return boolX and boolY
+end
+
 function enemy:setAnimationOrientation()
     if self.dir == 'right' and self.animation.flippedH or self.dir == 'left' and not self.animation.flippedH then
         self.animation:flipH()            
     end
 end
 
-return setmetatable(enemy, {__call = new})
+return setmetatable(enemy, { __call = function(_, ...) return new(...) end, new = new })

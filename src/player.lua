@@ -1,218 +1,143 @@
 player = {}
 
-function player:load(x, y)
-    self.scale = 3/2
-    self.x = x or WIDTH/2
-    self.y = y or HEIGHT/2
-    self.spd = 240
+function player:spawn(x, y)
+    self.scale = 1.5
+    self.x, self.y = x or WIDTH/2, y or HEIGHT/2
+    
+    self.maxSpd = 200
+    self.spd = 0
+    self.acceleration = 800
 
     self.width = 7 * self.scale
     self.height = 5 * self.scale
 
-    
+    self.hp = 4
+
     self.spriteSheet = love.graphics.newImage('/sprites/characters/player.png')
     self.frameWidth, self.frameHeight = self.spriteSheet:getWidth()/6, self.spriteSheet:getHeight()/10
     local g = anim8.newGrid(self.frameWidth, self.frameHeight, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
     
-    self.animations = {}        
-        self.animations.down = anim8.newAnimation(g('1-6', 4), 0.2)
-        self.animations.right = anim8.newAnimation(g('1-6', 5), 0.2)
-        self.animations.left = anim8.newAnimation(g('1-6', 5), 0.2):flipH()
-        self.animations.up = anim8.newAnimation(g('1-6', 6), 0.2)
+    local animations = {
+        move = {
+            frames = '1-6',
+            downRow = 4,
+            upRow = 6,
+            horizontalRow = 5
+        },
+        idle = {
+            frames = '1-6',
+            downRow = 1,
+            upRow = 3,
+            horizontalRow = 2
+        },
+        strike = {
+            frames = '1-4',
+            downRow = 7,
+            upRow = 9,
+            horizontalRow = 8
+        },
+        die = {
+            frames = '1-3',
+            onLoop = 'pauseAtEnd',
+            animSpd = 0.8,
+            horizontalRow = 10
+        }
+    }
 
-        self.animations.idleDown = anim8.newAnimation(g('1-6', 1), 0.2)
-        self.animations.idleRight = anim8.newAnimation(g('1-6', 2), 0.2)
-        self.animations.idleLeft = anim8.newAnimation(g('1-6', 2), 0.2):flipH()
-        self.animations.idleUp = anim8.newAnimation(g('1-6', 3), 0.2)
+    self.animations = {}
+    for key, anim in pairs(animations) do
+        if anim.downRow then
+            self.animations[key .. '_down'] = anim8.newAnimation(g(anim.frames, anim.downRow), anim.animSpd or 0.2, anim.onLoop)
+        end
 
-        self.animations.strikeDown = anim8.newAnimation(g('1-4', 7), 0.2)
-        self.animations.strikeRight = anim8.newAnimation(g('1-4', 8), 0.2)
-        self.animations.strikeLeft = anim8.newAnimation(g('1-4', 8), 0.2):flipH()
-        self.animations.strikeUp = anim8.newAnimation(g('1-4', 9), 0.2)
+        if anim.upRow then
+            self.animations[key .. '_up'] = anim8.newAnimation(g(anim.frames, anim.upRow), anim.animSpd or 0.2, anim.onLoop)
+        end
 
-        self.animations.dieRight = anim8.newAnimation(g('1-3', 10), 0.8, 'pauseAtEnd')
-        self.animations.dieLeft = anim8.newAnimation(g('1-3', 10), 0.8, 'pauseAtEnd'):flipH()
+        if anim.horizontalRow then
+            self.animations[key .. '_right'] = anim8.newAnimation(g(anim.frames, anim.horizontalRow), anim.animSpd or 0.2, anim.onLoop)
+            self.animations[key .. '_left'] = self.animations[key .. '_right']:clone():flipH()
+        end
+    end
 
-        self.animation = self.animations.idleDown
-        self.dir = 'down'
+    self.dir = 'down'
 
     self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, 2.5)
     self.collider:setCollisionClass('Player')
     self.collider:setFixedRotation(true)
-
-    self.hearts:load()
 end
 
 function player:update(dt)
-    self.dead = self.hearts.hearts == 0
+    local dx, dy = self:getVectors()
+    self:updateState(dx, dy)
 
-    if self.dead and self.animation.position == 3 then
-        if world then
-            world:destroy()
-            world = nil
-        end
-        return
-    end
-
-    self.animation:update(dt)
-
-    if self.dead then
-        if self.dir == 'right' or self.dir == 'down' then
-            self.animation = self.animations.dieRight
-        else
-            self.animation = self.animations.dieLeft
-        end
-        
-        if player.collider then
-            player.collider:destroy()
-            player.collider = nil
-        end
-        return
-    end
-
-    if self.strike then self.collider:setLinearVelocity(0,0)
-    else
-        local dx,dy = 0,0
-
-        if love.keyboard.isDown("right") or love.keyboard.isDown('d') then
-            dx = 1
-            self.animation = self.animations.right
-            self.dir = 'right'
-        end
-        if love.keyboard.isDown("left") or love.keyboard.isDown('a') then
-            dx = -1
-            self.animation = self.animations.left
-            self.dir = 'left'
-        end
-        if love.keyboard.isDown("down") or love.keyboard.isDown('s') then
-            dy = 1
-            self.animation = self.animations.down
-            self.dir = 'down'
-        end
-        if love.keyboard.isDown("up") or love.keyboard.isDown('w') then
-            dy = -1
-            self.animation = self.animations.up
-            self.dir = 'up'
-        end
-
-        local length = math.sqrt(dx^2+dy^2)
-        if length ~= 0 then
-            dx,dy = dx/length,dy/length
-        else
-            if self.dir == 'up' then
-                self.animation = self.animations.idleUp
-            elseif self.dir == 'down' then
-                self.animation = self.animations.idleDown
-            elseif self.dir =='right' then
-                self.animation = self.animations.idleRight
-            else
-                self.animation = self.animations.idleLeft
-            end
-        end
-        
-        self.collider:setLinearVelocity(self.spd * dx, self.spd * dy)
-    end
-
-    local function damage(dmg, collision_data)
-        dx, dy = collision_data.contact:getNormal()
-        local scalingFactor = -math.pow(10, 6)
-        
-        local dx, dy = dx*scalingFactor, dy*scalingFactor
-        self.collider:applyLinearImpulse(dx, dy)
-        
-        self.hearts:damage(dmg)
-    end
-
-    if self.dead then return end
-    if self.collider:enter('SkeletonSword') then damage(2, self.collider:getEnterCollisionData('SkeletonSword'))
-    elseif self.collider:enter('Enemy') then damage(1, self.collider:getEnterCollisionData('Enemy')) end
-
+    self:updateSpd(dt, dx, dy)
+    self.collider:setLinearVelocity(self.spd * dx, self.spd * dy)
     self.x, self.y = self.collider:getPosition()
+    self:updateSpd(dt, dx, dy)
+        
+    self.animation = self:getAnimation()
+    self:getAnimation():update(dt)
 end
 
 function player:draw()
-    self.animation:draw(self.spriteSheet, self.x, self.y, nil, self.scale, self.scale, self.frameWidth/2, self.frameHeight/2)
+    self.animation:draw(self.spriteSheet, self.x, self.y, nil, player.scale, player.scale, self.frameWidth/2, self.frameHeight/2)
 end
 
 function player:mousepressed()
-    self.strike = true
-    
-    local x, y = cam:mousePosition()
-    local dx = x - player.x
-    local dy = y - player.y
-    local angle = math.deg(math.atan2(dy, dx)) - 45
-    angle = (angle + 360) % 360
-    
-    if 0 <= angle and angle < 90 then
-        self.animation = self.animations.strikeDown:clone()
-        self.dir = 'down'
-    elseif 90 <= angle and angle < 180 then
-        self.animation = self.animations.strikeLeft:clone()
-        self.dir = 'left'
-    elseif 180 <= angle and angle < 270 then
-        self.animation = self.animations.strikeUp:clone()
-        self.dir = 'up'
-    else
-        self.animation = self.animations.strikeRight:clone()
+    --[[clock.during(self.animations.strike_down.totalDuration, function()
+        self.state = 'strike'
+    end, function()
+        self.state = 'idle'
+    end)]]
+end
+
+
+function player:getVectors()
+    local dx,dy = 0,0
+        
+    if love.keyboard.isDown("right", 'd') then
+        dx = 1
         self.dir = 'right'
     end
+    if love.keyboard.isDown("left", 'a') or love.keyboard.isDown('a') then
+        dx = -1
+        self.dir = 'left'
+    end
+    if love.keyboard.isDown("down", 's') then
+        dy = 1
+        self.dir = 'down'
+    end
+    if love.keyboard.isDown("up", 'w') then
+        dy = -1
+        self.dir = 'up'
+    end
+    
+    local length = math.sqrt(dx*dx + dy*dy)
+    if length ~= 0 then
+        dx,dy = dx/length,dy/length
+    end
 
-    clock.after(self.animation.intervals[#self.animation.frames], function() self.strike = false end)
+    return dx, dy
 end
 
-player.hearts = {}
-
-function player.hearts:load()
-    self.hp = 2
-    self.hearts = 4
-    self.maxHearts = self.hearts
-
-    self.spriteSheet = love.graphics.newImage('/sprites/objects/hearts/animated/border/heart_edit.png')
-    self.frameWidth = self.spriteSheet:getWidth() / 3
-    self.frameHeight = self.spriteSheet:getHeight()
-    local g = anim8.newGrid(self.frameWidth, self.frameHeight, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
-
-    self.animations = {}
-    for i=1, self.hearts do
-        table.insert(self.animations, anim8.newAnimation(g('1-3', 1), 0.2))
+function player:updateState(dx, dy)
+    if dx == 0 and dy == 0 then
+        self.state = 'idle'
+    else
+        self.state = 'move'
     end
 end
 
-function player.hearts:damage(dmg)
-    if self.hp - dmg < 0 then
-        self.animations[self.hearts]:gotoFrame(#self.animations[self.hearts].frames)
-        self.hearts = self.hearts - 1
-        self.hp = 2
-        dmg = dmg - 2
-    end
-
-    if self.hearts == 0 then return end
-
-    self.hp = self.hp - dmg
-    self.animations[self.hearts]:gotoFrame(3 - self.hp)
-
-    if self.hp == 0 then
-        self.hearts = self.hearts - 1
-        self.hp = 2
-    end
+function player:getAnimation()
+    return self.animations[self.state .. '_' .. self.dir]
 end
 
-function player.hearts:draw(reset)
-    love.graphics.setColor(0,0,0,0.3)
-    love.graphics.rectangle("fill", WIDTH - (self.frameWidth + 10)*#self.animations - 15, 3, (self.frameWidth + 10)*#self.animations+5, self.frameHeight*2)
-
-    reset()
-    for i, animation in ipairs(self.animations) do
-        animation:draw(self.spriteSheet, WIDTH - (self.frameWidth + 10)*(#self.animations-i+1) - 10, 10, nil, 1.2, 1.2)
-    end
-end
-
-function player.hearts:heal()
-    self.hearts = 4
-    self.hp = 2
-
-    for i, animation in ipairs(self.animations) do
-        animation:gotoFrame(1)
+function player:updateSpd(dt, dx, dy)
+    if self.state == 'idle' then
+        self.spd = math.max(self.spd - self.acceleration / 2 * dt, 0)
+    elseif self.state == 'move' then
+        self.spd = math.min(self.spd + self.acceleration / 2 * dt, self.maxSpd)
     end
 end
 
