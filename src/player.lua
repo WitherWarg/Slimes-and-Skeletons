@@ -77,7 +77,13 @@ function player:update(dt)
     self:updateSpd(dt, dx, dy)
         
     self.animation = self:getAnimation()
-    self:getAnimation():update(dt)
+
+    if self.state ~= self.currentState then
+        self.animation:gotoFrame(1)
+        self.currentState = self.state
+    end
+
+    self.animation:update(dt)
 end
 
 function player:draw()
@@ -85,17 +91,72 @@ function player:draw()
 end
 
 function player:mousepressed()
-    --[[clock.during(self.animations.strike_down.totalDuration, function()
-        self.state = 'strike'
+    if self.state == 'strike' then return end
+    self.state = 'strike'
+
+    local dx, dy = self:getStrikeVectors()
+
+    clock.during(self.animations.strike_down.totalDuration - 0.1, function()
+        self:queryForEnemies(dx, dy)
     end, function()
         self.state = 'idle'
-    end)]]
+    end)
 end
+
+
+function player:getStrikeVectors()
+    local mx, my = cam:mousePosition()
+    local angle = math.pi / 4
+    local dx, dy = player.x - mx + 0.1, player.y - my + 0.1
+    
+    dx = dx * math.cos(angle) - dy * math.sin(angle)
+    dy = dx * math.sin(angle) + dy * math.cos(angle)
+    dx, dy = dx / math.abs(dx), dy / math.abs(dy)
+
+    if dx == 1 and dy == -1 then
+        self.dir = 'down'
+    elseif dx == -1 and dy == 1 then
+        self.dir = 'up'
+    elseif dx == -1 and dx == -1 then
+        self.dir = 'right'
+    elseif dx == 1 and dy == 1 then
+        self.dir = 'left'
+    end
+
+    return dx, dy
+end
+
+function player:queryForEnemies(dx, dy)
+    local triangle = {
+        0, 6 * SY,
+        -4 * SX, 0,
+        4 * SX, 0
+    }
+
+    for i = 1, #triangle, 2 do
+        local x, y = triangle[i], triangle[i + 1]
+
+        local rotatedX = x * math.cos(math.pi/4) - y * math.sin(math.pi/4)
+        local rotatedY = x * math.sin(math.pi/4) + y * math.cos(math.pi/4)
+
+        local newX = rotatedX * dx - rotatedY * dy
+        local newY = rotatedX * dy + rotatedY * dx
+
+        triangle[i] = newX + player.x
+        triangle[i + 1] = newY + player.y
+    end
+
+    local enemies = world:queryPolygonArea(triangle, {'Enemy'})
+end 
 
 
 function player:getVectors()
     local dx,dy = 0,0
-        
+
+    if self.state == 'strike' then
+        return dx, dy
+    end
+
     if love.keyboard.isDown("right", 'd') then
         dx = 1
         self.dir = 'right'
@@ -122,7 +183,9 @@ function player:getVectors()
 end
 
 function player:updateState(dx, dy)
-    if dx == 0 and dy == 0 then
+    if self.state == 'strike' then
+        self.state = 'strike'
+    elseif dx == 0 and dy == 0 then
         self.state = 'idle'
     else
         self.state = 'move'
@@ -134,7 +197,7 @@ function player:getAnimation()
 end
 
 function player:updateSpd(dt, dx, dy)
-    if self.state == 'idle' then
+    if self.state == 'idle' or self.state == 'strike' then
         self.spd = math.max(self.spd - self.acceleration / 2 * dt, 0)
     elseif self.state == 'move' then
         self.spd = math.min(self.spd + self.acceleration / 2 * dt, self.maxSpd)
