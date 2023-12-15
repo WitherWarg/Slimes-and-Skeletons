@@ -1,9 +1,10 @@
 wf = require('/libraries/windfield')
 anim8 = require('/libraries/anim8')
 sti = require('/libraries/sti')
-camera = require('/libraries/hump/camera')
-clock = require('/libraries/hump/timer')
+camera = require('/libraries.hump.camera')
+clock = require('/libraries.hump.timer')
 flux = require('/libraries/flux')
+vector = require('/libraries.hump.vector')
 
 createCollisionClasses = require('/src/utilities/collisionClasses')
 gameStart = require('/src/utilities/gameStart')

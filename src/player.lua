@@ -127,28 +127,22 @@ function player:getStrikeVectors()
 end
 
 function player:queryForEnemies(dx, dy)
-    local triangle = {
-        0, 6 * SY,
-        -4 * SX, 0,
-        4 * SX, 0
+    local triangleVectors = {
+        vector(0, 8 * SY),
+        vector(4 * SX, 0),
+        vector(-4 * SX, 0)
     }
+    local triangle = {}
 
-    for i = 1, #triangle, 2 do
-        local x, y = triangle[i], triangle[i + 1]
-
-        local rotatedX = x * math.cos(math.pi/4) - y * math.sin(math.pi/4)
-        local rotatedY = x * math.sin(math.pi/4) + y * math.cos(math.pi/4)
-
-        local newX = rotatedX * dx - rotatedY * dy
-        local newY = rotatedX * dy + rotatedY * dx
-
-        triangle[i] = newX + player.x
-        triangle[i + 1] = newY + player.y
+    local angle = math.atan2(dy, dx) + math.pi / 4
+    for _, vec2 in ipairs(triangleVectors) do
+        vec2 = vec2:rotated(angle) + vector(player.x, player.y)
+        table.insert(triangle, vec2.x)
+        table.insert(triangle, vec2.y)
     end
 
-    local enemies = world:queryPolygonArea(triangle, {'Enemy'})
+    world:queryPolygonArea(triangle, {'Enemy'})
 end 
-
 
 function player:getVectors()
     local dx,dy = 0,0

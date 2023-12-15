@@ -62,7 +62,7 @@ function love.draw()
 
         reset()
         drawEntities(player, slime, skeleton)
-        --world:draw()
+        world:draw()
     cam:detach()
 
     reset()

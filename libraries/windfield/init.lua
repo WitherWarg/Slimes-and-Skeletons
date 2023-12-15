@@ -604,6 +604,11 @@ function World:queryPolygonArea(vertices, collision_class_names)
     if self.query_debug_drawing_enabled then table.insert(self.query_debug_draw, {type = 'polygon', vertices = vertices, frames = self.draw_query_for_n_frames}) end
 
     local cx, cy = self.wf.Math.polygon.getCentroid(vertices)
+    
+    for i=0, 3 do
+        table.remove(vertices, #vertices)
+    end
+    
     local d_max = 0
     for i = 1, #vertices, 2 do
         local d = self.wf.Math.line.getLength(cx, cy, vertices[i], vertices[i+1])
