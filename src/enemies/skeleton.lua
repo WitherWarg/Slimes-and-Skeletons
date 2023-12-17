@@ -1,7 +1,7 @@
 skeleton = {}
 
 local function new(x, y)
-    local statData = { x = x, y = y, aggro = 200, attackAggro = 70, hp = 4, spd = 100, width = 8, height = 4 }
+    local statData = { x = x, y = y, aggro = 200, attackAggro = 70, hp = 4, spd = 75, width = 8, height = 4 }
     local spriteData = { path = '/sprites/characters/skeleton.png', rows = 6, columns = 5, colliderCut = 2 }
     local animations = {
         moving = { frames = '1-6', row = 2 },
@@ -12,6 +12,8 @@ local function new(x, y)
     }
 
     table.insert(skeleton, enemy(statData, spriteData, animations))
+    skeleton[#skeleton].parent = skeleton
+    skeleton[#skeleton].positionInParent = #skeleton
 end
 
 return setmetatable(skeleton, { __call = function(_, ...) new(...) end, new = new })

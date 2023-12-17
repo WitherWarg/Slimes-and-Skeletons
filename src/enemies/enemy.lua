@@ -1,44 +1,55 @@
 enemy = {}
 enemy.__index = enemy
 
+-- Todo: create new timer instances in order to cancel all running timers in those intances for managing death
+-- Todo: Enemy damage behaviour
+-- * Note: Enemies should only damage player when in attack state
+
 local function new(statData, spriteData, animations)
     local self = {}
     setmetatable(self, enemy)
 
     self.x, self.y = statData.x, statData.y
     self.ox, self.oy = self.x, self.y
+    self.spd = statData.spd
     
     self.aggro = statData.aggro
     self.attackAggro = statData.attackAggro
     
-    self.spd = statData.spd
     self.hp = statData.hp
-    self.dir = 'right'
-
+    self.maxHp = self.hp
+    self.visibility = 100
+    
     self.width = statData.width * player.scale
     self.height = statData.height * player.scale
-
+    
     self.spriteSheet = love.graphics.newImage(spriteData.path)
     self.frameWidth = self.spriteSheet:getWidth() / spriteData.rows
     self.frameHeight = self.spriteSheet:getHeight() / spriteData.columns
     local g = anim8.newGrid(self.frameWidth, self.frameHeight, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
-
+    
     self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, spriteData.colliderCut)
     self.collider:setFixedRotation(true)
     self.collider:setCollisionClass('Enemy')
-
+    self.collider:setObject(self)
+    
     self.animations = {}
     for key, data in pairs(animations) do
         self.animations[key] = anim8.newAnimation(g(data.frames, data.row), data.animSpd or 0.2, data.onLoop)
     end
-
+    self.dir = 'right'
+    
     return self
 end
 
 function enemy:update(dt)
-    self.x, self.y = self.collider:getPosition()
-    self.state = self:getState()
+    if self.state == 'dead' then
+        goto animationUpdate
+    end
 
+    self.state = self:getState()
+    self.x, self.y = self.collider:getPosition()
+    
     if self.state == 'idle' then
         self.animation = self:idle()
     elseif self.state == 'attack' then
@@ -50,22 +61,30 @@ function enemy:update(dt)
     elseif self.state == 'dead' then
         self.animation = self:dead()
     end
+    
+    ::animationUpdate::
 
     if self.currentState ~= self.state and self.state ~= '' then
         if self.state == 'idle' then
             self.ox, self.oy = self.x, self.y
         end
-        
         self.currentState = self.state
         self.animation:gotoFrame(1)
     end
-
+    
     self.animation:update(dt)
     self:setAnimationOrientation()
 end
 
 function enemy:draw()
+    if self.state == 'dead' then
+        flux.to(self, 5, {visibility = 0}):ease('expoin')
+    end
+
+    local r, g, b, a = love.graphics.getColor()
+    love.graphics.setColor(hsl(0, 0, 100, self.visibility))
     self.animation:draw(self.spriteSheet, self.x, self.y, nil, player.scale, player.scale, self.frameWidth/2, self.frameHeight/2)
+    love.graphics.setColor(r, g, b, a)
 end
 
 
@@ -87,9 +106,9 @@ function enemy:attack()
 
     local intervals = self.animations.attack.intervals
     local frames = #self.animations.attack.frames + 1
-    local attackFunction, angle, spd
+    local attackTimer, angle, spd
 
-    local calculationBeforeAttack = clock.during(intervals[4], function()
+    local BeforeAttackTimer = clock.during(intervals[4], function()
         
         local dx, dy = self.x - player.x, self.y - player.y
         if math.sqrt( dx*dx + dy*dy ) > 150 then
@@ -111,27 +130,28 @@ function enemy:attack()
 
     end, function()
 
-        attackFunction = clock.during(intervals[frames] - intervals[4], function()
+        attackTimer = clock.during(intervals[frames] - intervals[4], function()
             self.collider:setLinearVelocity(spd * math.cos(angle), spd * math.sin(angle))
         end, function() self.attacking = false end)
 
-    end)
+        self.cancelAttackClocks = function()
+            clock.cancel(attackTimer)
+            clock.cancel(BeforeAttackTimer)
+        end
 
+        self.notAttacking = true
+        clock.after(intervals[frames] - intervals[4] + 2, function()
+            self.notAttacking = false
+        end)
+
+    end)
 
     clock.during(intervals[frames], function()
         if self.collider:enter('Player') then
             self.attacking = false
             self.collider:setLinearVelocity(0, 0)
             
-            local status, errorMessage = pcall(function()
-                clock.cancel(attackFunction)
-                clock.cancel(calculationBeforeAttack)
-            end)
-
-            if not status and errorMessage ~= '/libraries/hump/timer.lua:89: table index is nil' then
-                error(errorMessage)
-            end
-
+            pcall(self.cancelAttackClocks)
             return
         end
     end)
@@ -139,12 +159,33 @@ function enemy:attack()
     return self.animations.attack:clone()
 end
 
-function enemy:dmg()
+function enemy:dmg(dx, dy)
+    if dx and dy and not self.hit then
+        self.hit = true
+        local s = 100 / self.maxHp
+        self.collider:setLinearVelocity(0, 0)
+        self.collider:applyLinearImpulse(-dx * s, -dy * s)
+        self.hp = self.hp - 1
+
+        clock.after(self.animations.dmg.totalDuration, function()
+            self.hit = false
+        end)
+    end
+    
     return self.animations.dmg
 end
 
 function enemy:dead()
-    return self.animations.dead
+    if not self.collider:isDestroyed() then
+        self.collider:destroy()
+        pcall(self.cancelAttackClocks)
+    end
+    
+    if math.floor(self.visibility) == 0 then
+        table.remove(self.parent, self.positionInParent)
+    end
+
+    return self.animations.die
 end
 
 function enemy:getState()
@@ -154,6 +195,8 @@ function enemy:getState()
 
     if self.hp == 0 then
         return 'dead'
+    elseif self.hit then
+        return 'dmg'
     elseif #colliders == 0 and (distanceFromPlayer < self.aggro or self.currentState == 'moving' or self.currentState == 'attack') then
         if self.attacking then
             return ''
@@ -165,7 +208,7 @@ function enemy:getState()
             self.dir = 'left'
         end
 
-        if distanceFromPlayer < self.attackAggro then
+        if distanceFromPlayer < self.attackAggro and not self.notAttacking then
             return 'attack'
         end
 

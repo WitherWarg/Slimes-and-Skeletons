@@ -13,6 +13,7 @@ local function new(x, y)
     }
     table.insert(slime, enemy(statData, spriteData, animations))
     slime[#slime].parent = slime
+    slime[#slime].positionInParent = #slime
 end
 
 return setmetatable(slime, { __call = function(_, ...) new(...) end, new = new })

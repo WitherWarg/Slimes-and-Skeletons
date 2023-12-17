@@ -96,10 +96,15 @@ function player:mousepressed()
 
     local dx, dy = self:getStrikeVectors()
 
-    clock.during(self.animations.strike_down.totalDuration - 0.1, function()
-        self:queryForEnemies(dx, dy)
-    end, function()
-        self.state = 'idle'
+    clock.script(function(wait)
+        local waitTime = self.animations.strike_down.intervals[2] + 0.1
+        wait(waitTime - 0.1)
+
+        clock.during(self.animations.strike_down.totalDuration - waitTime, function()
+            self:queryForEnemies(dx, dy)
+        end, function()
+            self.state = 'idle'
+        end)
     end)
 end
 
@@ -141,8 +146,12 @@ function player:queryForEnemies(dx, dy)
         table.insert(triangle, vec2.y)
     end
 
-    world:queryPolygonArea(triangle, {'Enemy'})
-end 
+    local enemies = world:queryPolygonArea(triangle, {'Enemy'})
+
+    for i, enemy in ipairs(enemies) do
+        enemy:getObject():dmg(dx, dy)
+    end
+end
 
 function player:getVectors()
     local dx,dy = 0,0

@@ -62,12 +62,13 @@ function love.draw()
 
         reset()
         drawEntities(player, slime, skeleton)
-        world:draw()
+        --world:draw()
     cam:detach()
 
     reset()
     local font = love.graphics.newFont(15*SX)
     love.graphics.setFont(font)
+    pcall(function() love.graphics.print() end)
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
@@ -83,5 +84,5 @@ function love.keypressed(key)
     
     if pause then return end
 
-    if key == 'n' then slime(player.x + 240, player.y) end
+    if key == 'n' then skeleton(player.x + 240, player.y) end
 end
