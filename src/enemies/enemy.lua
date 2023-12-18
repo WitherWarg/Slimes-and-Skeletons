@@ -1,13 +1,15 @@
 enemy = {}
 enemy.__index = enemy
 
--- Todo: create new timer instances in order to cancel all running timers in those intances for managing death
 -- Todo: Enemy damage behaviour
--- * Note: Enemies should only damage player when in attack state
+-- Note: Enemies should only damage player when in attack state
 
 local function new(statData, spriteData, animations)
     local self = {}
     setmetatable(self, enemy)
+
+    self.parent = statData.parent
+    self.positionInParent = statData.positionInParent
 
     self.x, self.y = statData.x, statData.y
     self.ox, self.oy = self.x, self.y
@@ -38,31 +40,31 @@ local function new(statData, spriteData, animations)
         self.animations[key] = anim8.newAnimation(g(data.frames, data.row), data.animSpd or 0.2, data.onLoop)
     end
     self.dir = 'right'
+    self.attackInterval = spriteData.attackInterval
     
+    self.clock = clock.new()
     return self
 end
 
 function enemy:update(dt)
-    if self.state == 'dead' then
-        goto animationUpdate
-    end
+    self.clock:update(dt)
 
-    self.state = self:getState()
-    self.x, self.y = self.collider:getPosition()
-    
-    if self.state == 'idle' then
-        self.animation = self:idle()
-    elseif self.state == 'attack' then
-        self.animation = self:attack()
-    elseif self.state == 'moving' then
-        self.animation = self:moving()
-    elseif self.state == 'dmg' then
-        self.animation = self:dmg()
-    elseif self.state == 'dead' then
-        self.animation = self:dead()
+    if self.state ~= 'dead' then
+        self.state = self:getState()
+        self.x, self.y = self.collider:getPosition()
+        
+        if self.state == 'idle' then
+            self.animation = self:idle()
+        elseif self.state == 'attack' then
+            self.animation = self:attack()
+        elseif self.state == 'moving' then
+            self.animation = self:moving()
+        elseif self.state == 'dmg' then
+            self.animation = self:dmg()
+        elseif self.state == 'dead' then
+            self.animation = self:dead()
+        end
     end
-    
-    ::animationUpdate::
 
     if self.currentState ~= self.state and self.state ~= '' then
         if self.state == 'idle' then
@@ -77,13 +79,11 @@ function enemy:update(dt)
 end
 
 function enemy:draw()
-    if self.state == 'dead' then
-        flux.to(self, 5, {visibility = 0}):ease('expoin')
-    end
-
     local r, g, b, a = love.graphics.getColor()
+
     love.graphics.setColor(hsl(0, 0, 100, self.visibility))
     self.animation:draw(self.spriteSheet, self.x, self.y, nil, player.scale, player.scale, self.frameWidth/2, self.frameHeight/2)
+
     love.graphics.setColor(r, g, b, a)
 end
 
@@ -108,7 +108,7 @@ function enemy:attack()
     local frames = #self.animations.attack.frames + 1
     local attackTimer, angle, spd
 
-    local BeforeAttackTimer = clock.during(intervals[4], function()
+    local BeforeAttackTimer = self.clock:during(intervals[4], function()
         
         local dx, dy = self.x - player.x, self.y - player.y
         if math.sqrt( dx*dx + dy*dy ) > 150 then
@@ -130,14 +130,13 @@ function enemy:attack()
 
     end, function()
 
-        attackTimer = clock.during(intervals[frames] - intervals[4], function()
+        attackTimer = self.clock:during(intervals[frames] - intervals[4], function()
             self.collider:setLinearVelocity(spd * math.cos(angle), spd * math.sin(angle))
-        end, function() self.attacking = false end)
+        end)
 
-        self.cancelAttackClocks = function()
-            clock.cancel(attackTimer)
-            clock.cancel(BeforeAttackTimer)
-        end
+        clock.after(intervals[frames] - intervals[4], function()
+            self.attacking = false
+        end)
 
         self.notAttacking = true
         clock.after(intervals[frames] - intervals[4] + 2, function()
@@ -151,7 +150,10 @@ function enemy:attack()
             self.attacking = false
             self.collider:setLinearVelocity(0, 0)
             
-            pcall(self.cancelAttackClocks)
+            pcall(function()
+                self.clock:cancel(attackTimer)
+                self.clock:cancel(BeforeAttackTimer)
+            end)
             return
         end
     end)
@@ -161,13 +163,15 @@ end
 
 function enemy:dmg(dx, dy)
     if dx and dy and not self.hit then
+        self.clock:clear()
+
         self.hit = true
-        local s = 100 / self.maxHp
+        local s = 50 / self.maxHp
         self.collider:setLinearVelocity(0, 0)
         self.collider:applyLinearImpulse(-dx * s, -dy * s)
         self.hp = self.hp - 1
 
-        clock.after(self.animations.dmg.totalDuration, function()
+        self.clock:after(self.animations.dmg.totalDuration, function()
             self.hit = false
         end)
     end
@@ -178,7 +182,8 @@ end
 function enemy:dead()
     if not self.collider:isDestroyed() then
         self.collider:destroy()
-        pcall(self.cancelAttackClocks)
+        self.clock:clear()
+        flux.to(self, 7, {visibility = 0}):ease('cubicin')
     end
     
     if math.floor(self.visibility) == 0 then
@@ -192,7 +197,6 @@ function enemy:getState()
     local dx, dy = player.x - self.x, player.y - self.y
     distanceFromPlayer = math.sqrt( dx*dx + dy*dy )
     local colliders = world:queryLine( player.x, player.y, self.x, self.y, {'Wall'} )
-
     if self.hp == 0 then
         return 'dead'
     elseif self.hit then

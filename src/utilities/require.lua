@@ -11,9 +11,8 @@ gameStart = require('/src/utilities/gameStart')
 
 hsl = require('/src/functions/hsl')
 deathScreen = require('/src/functions/deathScreen')
-drawEntities = require('/src/functions//drawEntities')
-updateAll = require('/src/functions/updateAll')
 printTable = require('/src/functions/printTable')
+debug = require('/src/functions/debug')
 
 enemy = require('/src/enemies/enemy')
 slime = require('/src/enemies/slime')

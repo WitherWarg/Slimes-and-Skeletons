@@ -24,30 +24,40 @@ function love.load()
     WIDTH, HEIGHT = WIDTH/SX, HEIGHT/SY
     cam = camera()
     cam:zoom(SX)
+    hud = camera()
+    hud:zoom(SX)
+    hud:lookAt(WIDTH/2, HEIGHT/2)
 end
 
 function love.update(dt)
     if pause then return end
+    if player.state == 'dead' then
+        player.animation:update(dt)
+        return
+    end
     if FPS then
         love.timer.sleep(1/FPS)
     end
     
     world:update(dt)
-    updateAll(dt, player, slime, skeleton)
+    player:update(dt)
+    for _, e in ipairs(slime) do e:update(dt) end
+    for _, e in ipairs(skeleton) do e:update(dt) end
+    cam:update(dt)
     flux.update(dt)
     clock.update(dt)
-
-    cam:lookAt(player.x, player.y)
-    local w, h = Demo.tilewidth * Demo.width, Demo.tileheight * Demo.height
-    cam.x = math.max(math.min( cam.x, w - WIDTH/2 ), WIDTH/2)
-    cam.y = math.max(math.min( cam.y, h - HEIGHT/2 ), HEIGHT/2)
 end
 
 function love.draw()
-    local function reset()
-        love.graphics.setColor(hsl(0, 0, 100))
+    if player.state == 'dead' then
+        cam:attach()
+            deathScreen()
+            player:draw()
+        cam:detach()
+
+        return
     end
-    
+
     cam:attach()
         for key, value in pairs(Demo.layers) do
             if type(key) == 'number' and value.type == 'tilelayer' then
@@ -55,24 +65,30 @@ function love.draw()
             end
         end
 
-        if player.dead then
-            reset()
-            deathScreen()
-        end
+        local entities = {}
+        
+        table.insert(entities, player)
+        for _, e in ipairs(slime) do table.insert(entities, e) end
+        for _, e in ipairs(skeleton) do table.insert(entities, e) end
 
-        reset()
-        drawEntities(player, slime, skeleton)
-        --world:draw()
+        table.sort(entities, function(a, b) return a.y < b.y end)
+        for _, e in ipairs(entities) do e:draw() end
     cam:detach()
 
-    reset()
-    local font = love.graphics.newFont(15*SX)
-    love.graphics.setFont(font)
-    pcall(function() love.graphics.print() end)
+    hud:attach()
+        local health_bar = love.graphics.newImage('/sprites/objects/hearts/health_bar/health_bar_decoration.png')
+        local health_level = love.graphics.newImage('/sprites/objects/hearts/health_bar/health_bar.png')
+
+        love.graphics.draw(health_bar, 10, 10)
+
+        local width = player.hp / player.maxHp * health_level:getWidth()
+        local quad = love.graphics.newQuad(0, 0, width, health_level:getHeight(), health_level:getDimensions())
+        love.graphics.draw(health_level, quad, 24, 10)
+    hud:detach()
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
-    if pause then return end
+    if pause or player.state == 'dead' then return end
 
     if button == 1 then
         player:mousepressed()
@@ -82,7 +98,10 @@ end
 function love.keypressed(key)
     if key == 'p' or key == 'escape' then pause = not pause end
     
-    if pause then return end
+    if pause or player.state == 'dead' then return end
 
-    if key == 'n' then skeleton(player.x + 240, player.y) end
+    if key == 'n' then slime(player.x + 240, player.y) end
+
+    if key == 'down' then player.hp = math.max( player.hp - 20, 0 ) end
+    if key == 'up' then player.hp = math.min( player.hp + 20, player.maxHp ) end
 end

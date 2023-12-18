@@ -11,7 +11,8 @@ function player:spawn(x, y)
     self.width = 7 * self.scale
     self.height = 5 * self.scale
 
-    self.hp = 4
+    self.hp = 100
+    self.maxHp = self.hp
 
     self.spriteSheet = love.graphics.newImage('/sprites/characters/player.png')
     self.frameWidth, self.frameHeight = self.spriteSheet:getWidth()/6, self.spriteSheet:getHeight()/10
@@ -36,7 +37,7 @@ function player:spawn(x, y)
             upRow = 9,
             horizontalRow = 8
         },
-        die = {
+        dead = {
             frames = '1-3',
             onLoop = 'pauseAtEnd',
             animSpd = 0.8,
@@ -71,11 +72,26 @@ function player:update(dt)
     local dx, dy = self:getVectors()
     self:updateState(dx, dy)
 
-    self:updateSpd(dt, dx, dy)
-    self.collider:setLinearVelocity(self.spd * dx, self.spd * dy)
-    self.x, self.y = self.collider:getPosition()
-    self:updateSpd(dt, dx, dy)
-        
+    if self.state == 'dead' then
+        if self.dir == 'up' then
+            self.dir = 'right'
+        elseif self.dir == 'down' then
+            self.dir = 'left'
+        end
+
+        if world then
+            self:kill()
+        end
+    else
+        self:updateSpd(dt, dx, dy)
+
+        self.collider:setLinearVelocity(self.spd * dx, self.spd * dy)
+        self.x, self.y = self.collider:getPosition()
+        self.x, self.y = math.floor(self.x), math.floor(self.y)
+
+        self:updateSpd(dt, dx, dy)
+    end
+
     self.animation = self:getAnimation()
 
     if self.state ~= self.currentState then
@@ -160,19 +176,19 @@ function player:getVectors()
         return dx, dy
     end
 
-    if love.keyboard.isDown("right", 'd') then
+    if love.keyboard.isDown('d') then
         dx = 1
         self.dir = 'right'
     end
-    if love.keyboard.isDown("left", 'a') or love.keyboard.isDown('a') then
+    if love.keyboard.isDown('a') or love.keyboard.isDown('a') then
         dx = -1
         self.dir = 'left'
     end
-    if love.keyboard.isDown("down", 's') then
+    if love.keyboard.isDown('s') then
         dy = 1
         self.dir = 'down'
     end
-    if love.keyboard.isDown("up", 'w') then
+    if love.keyboard.isDown('w') then
         dy = -1
         self.dir = 'up'
     end
@@ -186,7 +202,9 @@ function player:getVectors()
 end
 
 function player:updateState(dx, dy)
-    if self.state == 'strike' then
+    if self.hp == 0 then
+        self.state = 'dead'
+    elseif self.state == 'strike' then
         self.state = 'strike'
     elseif dx == 0 and dy == 0 then
         self.state = 'idle'
@@ -205,6 +223,13 @@ function player:updateSpd(dt, dx, dy)
     elseif self.state == 'move' then
         self.spd = math.min(self.spd + self.acceleration / 2 * dt, self.maxSpd)
     end
+end
+
+function player:kill()
+    clock.clear()
+
+    world:destroy()
+    world = nil
 end
 
 return player
