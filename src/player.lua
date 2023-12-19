@@ -165,7 +165,7 @@ function player:queryForEnemies(dx, dy)
     local enemies = world:queryPolygonArea(triangle, {'Enemy'})
 
     for i, enemy in ipairs(enemies) do
-        enemy:getObject():dmg(dx, dy)
+        enemy:getObject():dmg()
     end
 end
 

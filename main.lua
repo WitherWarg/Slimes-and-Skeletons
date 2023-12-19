@@ -53,6 +53,7 @@ function love.draw()
         cam:attach()
             deathScreen()
             player:draw()
+            cam:lookAt(player.x, player.y)
         cam:detach()
 
         return
@@ -88,7 +89,12 @@ function love.draw()
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
-    if pause or player.state == 'dead' then return end
+    if player.state == 'dead' then
+        gameStart()
+        return
+    end
+
+    if pause then return end
 
     if button == 1 then
         player:mousepressed()
@@ -96,11 +102,15 @@ function love.mousepressed(x, y, button, istouch, presses)
 end
 
 function love.keypressed(key)
-    if key == 'p' or key == 'escape' then pause = not pause end
-    
-    if pause or player.state == 'dead' then return end
+    if player.state == 'dead' then
+        gameStart()
+        return
+    end
 
-    if key == 'n' then slime(player.x + 240, player.y) end
+    if key == 'p' or key == 'escape' then pause = not pause end
+    if pause then return end
+
+    if key == 'n' then skeleton(player.x + 240, player.y) end
 
     if key == 'down' then player.hp = math.max( player.hp - 20, 0 ) end
     if key == 'up' then player.hp = math.min( player.hp + 20, player.maxHp ) end

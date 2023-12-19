@@ -11,8 +11,6 @@ local function new(statData, spriteData, animations)
     self.parent = statData.parent
     self.positionInParent = statData.positionInParent
 
-    self.x, self.y = statData.x, statData.y
-    self.ox, self.oy = self.x, self.y
     self.spd = statData.spd
     
     self.aggro = statData.aggro
@@ -30,10 +28,12 @@ local function new(statData, spriteData, animations)
     self.frameHeight = self.spriteSheet:getHeight() / spriteData.columns
     local g = anim8.newGrid(self.frameWidth, self.frameHeight, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
     
-    self.collider = world:newBSGRectangleCollider(self.x, self.y, self.width, self.height, spriteData.colliderCut)
+    self.collider = world:newBSGRectangleCollider(statData.x, statData.y, self.width, self.height, spriteData.colliderCut)
     self.collider:setFixedRotation(true)
     self.collider:setCollisionClass('Enemy')
     self.collider:setObject(self)
+
+    self.x, self.y = self.collider:getPosition()
     
     self.animations = {}
     for key, data in pairs(animations) do
@@ -51,7 +51,6 @@ function enemy:update(dt)
 
     if self.state ~= 'dead' then
         self.state = self:getState()
-        self.x, self.y = self.collider:getPosition()
         
         if self.state == 'idle' then
             self.animation = self:idle()
@@ -67,9 +66,6 @@ function enemy:update(dt)
     end
 
     if self.currentState ~= self.state and self.state ~= '' then
-        if self.state == 'idle' then
-            self.ox, self.oy = self.x, self.y
-        end
         self.currentState = self.state
         self.animation:gotoFrame(1)
     end
@@ -97,6 +93,7 @@ end
 function enemy:moving()
     local angle = math.atan2(player.y - self.y, player.x - self.x)
     self.collider:setLinearVelocity(self.spd * math.cos(angle), self.spd * math.sin(angle))
+    self.x, self.y = self.collider:getPosition()
 
     return self.animations.moving
 end
@@ -132,18 +129,26 @@ function enemy:attack()
 
         attackTimer = self.clock:during(intervals[frames] - intervals[4], function()
             self.collider:setLinearVelocity(spd * math.cos(angle), spd * math.sin(angle))
-        end)
-
-        clock.after(intervals[frames] - intervals[4], function()
-            self.attacking = false
-        end)
-
-        self.notAttacking = true
-        clock.after(intervals[frames] - intervals[4] + 2, function()
-            self.notAttacking = false
+            self.x, self.y = self.collider:getPosition()
         end)
 
     end)
+
+    local attackVariables, attackFunc = nil, function()
+        self.attacking = false
+
+        self.notAttacking = true
+        clock.after(1.5, function()
+            self.notAttacking = false
+        end)
+    end
+
+    attackVariables = clock.during(intervals[frames], function()
+        if self.currentState == 'dmg' then
+            attackFunc()
+            clock.cancel(attackVariables)
+        end
+    end, attackFunc)
 
     clock.during(intervals[frames], function()
         if self.collider:enter('Player') then
@@ -161,17 +166,30 @@ function enemy:attack()
     return self.animations.attack:clone()
 end
 
-function enemy:dmg(dx, dy)
-    if dx and dy and not self.hit then
+function enemy:dmg()
+    if not self.hit then
         self.clock:clear()
-
         self.hit = true
-        local s = 50 / self.maxHp
-        self.collider:setLinearVelocity(0, 0)
-        self.collider:applyLinearImpulse(-dx * s, -dy * s)
-        self.hp = self.hp - 1
 
-        self.clock:after(self.animations.dmg.totalDuration, function()
+        local s = 75 / self.maxHp
+        self.collider:setLinearVelocity(0, 0)
+
+        local dx, dy = 1, 1
+        if player.dir == 'left' then
+            dx = -dx
+        elseif player.dir == 'up' then
+            dx, dy = -dx, -dy
+        end
+
+        self.collider:applyLinearImpulse(dx * s, dy * s)
+
+        self.hp = self.hp - 1
+        
+        self.clock:during(self.animations.dmg.totalDuration, function()
+            self.x, self.y = self.collider:getPosition()
+        end)
+
+        clock.after(self.animations.dmg.totalDuration, function()
             self.hit = false
         end)
     end
@@ -194,14 +212,19 @@ function enemy:dead()
 end
 
 function enemy:getState()
+    if self.hp == 0 or not world then
+        return 'dead'
+    end
+
+    if self.hit then
+        return 'dmg'
+    end
+
     local dx, dy = player.x - self.x, player.y - self.y
     distanceFromPlayer = math.sqrt( dx*dx + dy*dy )
     local colliders = world:queryLine( player.x, player.y, self.x, self.y, {'Wall'} )
-    if self.hp == 0 then
-        return 'dead'
-    elseif self.hit then
-        return 'dmg'
-    elseif #colliders == 0 and (distanceFromPlayer < self.aggro or self.currentState == 'moving' or self.currentState == 'attack') then
+    
+    if #colliders == 0 and (distanceFromPlayer < self.aggro or self.currentState == 'moving' or self.currentState == 'attack') then
         if self.attacking then
             return ''
         end
@@ -217,9 +240,9 @@ function enemy:getState()
         end
 
         return 'moving'
-    else
-        return 'idle'
     end
+    
+    return 'idle'
 end
 
 function enemy:isOnScreen()
