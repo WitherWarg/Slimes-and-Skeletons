@@ -90,6 +90,8 @@ function player:update(dt)
         self.x, self.y = math.floor(self.x), math.floor(self.y)
 
         self:updateSpd(dt, dx, dy)
+
+        self:checkEnemyDmg()
     end
 
     self.animation = self:getAnimation()
@@ -110,6 +112,10 @@ function player:mousepressed()
     if self.state == 'strike' then return end
     self.state = 'strike'
 
+    local angle = math.atan2(self.y - love.mouse.getY(), self.x - love.mouse.getX())
+    local s = -100
+    self.collider:applyLinearImpulse(s * math.cos(angle), s * math.sin(angle))
+
     local dx, dy = self:getStrikeVectors()
 
     clock.script(function(wait)
@@ -117,7 +123,7 @@ function player:mousepressed()
         wait(waitTime - 0.1)
 
         clock.during(self.animations.strike_down.totalDuration - waitTime, function()
-            self:queryForEnemies(dx, dy)
+            if self.animation.position < #self.animation.frames - 1 then self:queryForEnemies(dx, dy) end
         end, function()
             self.state = 'idle'
         end)
@@ -222,6 +228,23 @@ function player:updateSpd(dt, dx, dy)
         self.spd = math.max(self.spd - self.acceleration / 2 * dt, 0)
     elseif self.state == 'move' then
         self.spd = math.min(self.spd + self.acceleration / 2 * dt, self.maxSpd)
+    end
+end
+
+function player:checkEnemyDmg()
+    if self.collider:enter('Enemy') then
+        print('executing')
+        local collision_data = self.collider:getEnterCollisionData('Enemy')
+        
+        local enemy = collision_data.collider:getObject()
+        if not enemy.attacking then return end
+
+        local dx, dy = collision_data.contact:getNormal()
+        local s = -1000
+        self.collider:applyLinearImpulse(dx * s, dy * s)
+        self.x, self.y = self.collider:getPosition()
+
+        self.hp = self.hp - enemy.maxHp * 5
     end
 end
 

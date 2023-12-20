@@ -1,9 +1,6 @@
 enemy = {}
 enemy.__index = enemy
 
--- Todo: Enemy damage behaviour
--- Note: Enemies should only damage player when in attack state
-
 local function new(statData, spriteData, animations)
     local self = {}
     setmetatable(self, enemy)
@@ -152,8 +149,10 @@ function enemy:attack()
 
     clock.during(intervals[frames], function()
         if self.collider:enter('Player') then
-            self.attacking = false
             self.collider:setLinearVelocity(0, 0)
+
+            self.attacking = false
+            clock.cancel(attackVariables)
             
             pcall(function()
                 self.clock:cancel(attackTimer)
@@ -199,6 +198,7 @@ end
 
 function enemy:dead()
     if not self.collider:isDestroyed() then
+        player.hp = math.min(player.hp + 5 * self.maxHp, player.maxHp)
         self.collider:destroy()
         self.clock:clear()
         flux.to(self, 7, {visibility = 0}):ease('cubicin')
