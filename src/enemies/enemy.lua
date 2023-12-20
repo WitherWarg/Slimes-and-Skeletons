@@ -105,12 +105,9 @@ function enemy:attack()
     local BeforeAttackTimer = self.clock:during(intervals[4], function()
         
         local dx, dy = self.x - player.x, self.y - player.y
-        if math.sqrt( dx*dx + dy*dy ) > 150 then
-            return
-        end
+        if math.sqrt( dx*dx + dy*dy ) > 150 then return end
 
         local distanceFromPlayer = math.sqrt( dx*dx + dy*dy )
-        distanceFromPlayer = ( math.abs(distanceFromPlayer) + self.attackAggro ) * distanceFromPlayer / math.abs(distanceFromPlayer)
         spd = distanceFromPlayer / (intervals[frames] - intervals[4])
         angle = math.atan2(player.y - self.y, player.x - self.x)
         

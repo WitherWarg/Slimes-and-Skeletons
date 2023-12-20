@@ -19,20 +19,23 @@ function love.load()
         wall:setType('static')
     end
 
-    SX, SY = 3, 3
-    WIDTH, HEIGHT = love.graphics.getDimensions()
-    WIDTH, HEIGHT = WIDTH/SX, HEIGHT/SY
     cam = camera()
-    cam:zoom(SX)
+    cam:zoom(3)
+    require('/src/functions/cam')
+
+    WIDTH, HEIGHT = love.graphics.getDimensions()
+    WIDTH, HEIGHT = WIDTH / cam.scale, HEIGHT / cam.scale
+    
     hud = camera()
-    hud:zoom(SX)
-    hud:lookAt(WIDTH/2, HEIGHT/2)
+    hud:zoom(cam.scale)
+    hud:lookAt(WIDTH / 2, HEIGHT / 2)
 end
 
 function love.update(dt)
     if pause then return end
     if player.state == 'dead' then
         player.animation:update(dt)
+        cam:lookAt(player.x, player.y)
         return
     end
     if FPS then
@@ -53,7 +56,6 @@ function love.draw()
         cam:attach()
             deathScreen()
             player:draw()
-            cam:lookAt(player.x, player.y)
         cam:detach()
 
         return
@@ -108,7 +110,8 @@ function love.keypressed(key)
     end
 
     if key == 'p' or key == 'escape' then pause = not pause end
-    if pause then return end
+    --if pause then return end
 
-    if key == 'n' then skeleton(player.x + 240, player.y) end
+    if key == 'n' then slime(player.x + 200, player.y) end
+    if key == 'k' then skeleton(player.x + 200, player.y) end
 end

@@ -4,9 +4,9 @@ function player:spawn(x, y)
     self.scale = 1.5
     self.x, self.y = x or WIDTH/2, y or HEIGHT/2
     
-    self.maxSpd = 200
+    self.maxSpd = 130
     self.spd = 0
-    self.acceleration = 800
+    self.acceleration = self.maxSpd / (love.timer.getAverageDelta() * 0.5)
 
     self.width = 7 * self.scale
     self.height = 5 * self.scale
@@ -69,7 +69,13 @@ function player:spawn(x, y)
 end
 
 function player:update(dt)
-    local dx, dy = self:getVectors()
+    local dx, dy = 0, 0
+    if self.state == 'strike' then
+        dx, dy = self:getStrikeVectors(dx, dy)
+    else
+        dx, dy = self:getVectors(dx, dy)
+    end
+
     self:updateState(dx, dy)
 
     if self.state == 'dead' then
@@ -79,21 +85,20 @@ function player:update(dt)
             self.dir = 'left'
         end
 
-        if world then
-            self:kill()
-        end
+        if world then self:kill() end
     else
-        self:updateSpd(dt, dx, dy)
+        local vx, vy = self:getVectors(0, 0)
+        self:updateSpd(dt, vx, vy)
 
-        self.collider:setLinearVelocity(self.spd * dx, self.spd * dy)
+        self.collider:setLinearVelocity(self.spd * vx, self.spd * vy)
         self.x, self.y = self.collider:getPosition()
-        self.x, self.y = math.floor(self.x), math.floor(self.y)
 
-        self:updateSpd(dt, dx, dy)
+        self:updateSpd(dt, vx, vy)
 
         self:checkEnemyDmg()
     end
 
+    self:updateDir(dx, dy)
     self.animation = self:getAnimation()
 
     if self.state ~= self.currentState then
@@ -110,54 +115,35 @@ end
 
 function player:mousepressed()
     if self.state == 'strike' then return end
+    
     self.state = 'strike'
+    self.mx, self.my = love.mouse.getPosition()
 
-    local angle = math.atan2(self.y - love.mouse.getY(), self.x - love.mouse.getX())
-    local s = -100
-    self.collider:applyLinearImpulse(s * math.cos(angle), s * math.sin(angle))
-
-    local dx, dy = self:getStrikeVectors()
-
-    clock.script(function(wait)
-        local waitTime = self.animations.strike_down.intervals[2] + 0.1
-        wait(waitTime - 0.1)
-
-        clock.during(self.animations.strike_down.totalDuration - waitTime, function()
-            if self.animation.position < #self.animation.frames - 1 then self:queryForEnemies(dx, dy) end
-        end, function()
-            self.state = 'idle'
-        end)
+    clock.during(self.animations.strike_down.totalDuration - 0.005, function()
+        self:queryForEnemies(self:getStrikeVectors())
+    end, function()
+        self.state = ''
+        self.strike = false
     end)
 end
 
 
-function player:getStrikeVectors()
-    local mx, my = cam:mousePosition()
-    local angle = math.pi / 4
-    local dx, dy = player.x - mx + 0.1, player.y - my + 0.1
-    
-    dx = dx * math.cos(angle) - dy * math.sin(angle)
-    dy = dx * math.sin(angle) + dy * math.cos(angle)
-    dx, dy = dx / math.abs(dx), dy / math.abs(dy)
+function player:getStrikeVectors(dx, dy)
+    local mx, my = cam:worldCoords(self.mx, self.my)
 
-    if dx == 1 and dy == -1 then
-        self.dir = 'down'
-    elseif dx == -1 and dy == 1 then
-        self.dir = 'up'
-    elseif dx == -1 and dx == -1 then
-        self.dir = 'right'
-    elseif dx == 1 and dy == 1 then
-        self.dir = 'left'
-    end
+    dx, dy = self.x - mx, self.y - my
 
-    return dx, dy
+    local vec2 = vector(dx, dy)
+    vec2:rotateInplace(math.pi / 4)
+
+    return vec2:unpack()
 end
 
 function player:queryForEnemies(dx, dy)
     local triangleVectors = {
-        vector(0, 8 * SY),
-        vector(4 * SX, 0),
-        vector(-4 * SX, 0)
+        vector(0, 24),
+        vector(12, 0),
+        vector(-12, 0)
     }
     local triangle = {}
 
@@ -175,33 +161,15 @@ function player:queryForEnemies(dx, dy)
     end
 end
 
-function player:getVectors()
-    local dx,dy = 0,0
-
-    if self.state == 'strike' then
-        return dx, dy
-    end
-
-    if love.keyboard.isDown('d') then
-        dx = 1
-        self.dir = 'right'
-    end
-    if love.keyboard.isDown('a') or love.keyboard.isDown('a') then
-        dx = -1
-        self.dir = 'left'
-    end
-    if love.keyboard.isDown('s') then
-        dy = 1
-        self.dir = 'down'
-    end
-    if love.keyboard.isDown('w') then
-        dy = -1
-        self.dir = 'up'
-    end
+function player:getVectors(dx, dy)
+    if love.keyboard.isDown('d') then dx = 1
+    elseif love.keyboard.isDown('a') then dx = -1 end
+    if love.keyboard.isDown('s') then dy = 1
+    elseif love.keyboard.isDown('w') then dy = -1 end
     
     local length = math.sqrt(dx*dx + dy*dy)
     if length ~= 0 then
-        dx,dy = dx/length,dy/length
+        dx, dy = dx/length, dy/length
     end
 
     return dx, dy
@@ -219,16 +187,36 @@ function player:updateState(dx, dy)
     end
 end
 
-function player:getAnimation()
-    return self.animations[self.state .. '_' .. self.dir]
+function player:updateDir(dx, dy)
+    dx, dy = dx / math.abs(dx), dy / math.abs(dy)
+
+    if self.state == 'strike' and not self.strike then
+        self.strike = true
+
+        if dx == 1 and dy == -1 then self.dir = 'down'
+        elseif dx == -1 and dy == 1 then self.dir = 'up'
+        elseif dx == -1 and dy == -1 then self.dir = 'right'
+        elseif dx == 1 and dy == 1 then self.dir = 'left' end
+    elseif self.state ~= 'strike' then
+        if dy == 1 then self.dir = 'down'
+        elseif dy == -1 then self.dir = 'up'
+        elseif dx == 1 then self.dir = 'right'
+        elseif dx == -1 then self.dir = 'left' end
+    end
 end
 
 function player:updateSpd(dt, dx, dy)
-    if self.state == 'idle' or self.state == 'strike' then
+    if self.state == 'strike' then
+        self.spd = self.spd
+    elseif self.state == 'idle' then
         self.spd = math.max(self.spd - self.acceleration / 2 * dt, 0)
     elseif self.state == 'move' then
         self.spd = math.min(self.spd + self.acceleration / 2 * dt, self.maxSpd)
     end
+end
+
+function player:getAnimation()
+    return self.animations[self.state .. '_' .. self.dir]
 end
 
 function player:checkEnemyDmg()
@@ -250,6 +238,8 @@ end
 
 function player:kill()
     clock.clear()
+    for _, e in ipairs(slime) do e.clock:clear() end
+    for _, e in ipairs(skeleton) do e.clock:clear() end
 
     world:destroy()
     world = nil
