@@ -110,7 +110,7 @@ function love.keypressed(key)
     end
 
     if key == 'p' or key == 'escape' then pause = not pause end
-    --if pause then return end
+    if pause then return end
 
     if key == 'n' then slime(player.x + 200, player.y) end
     if key == 'k' then skeleton(player.x + 200, player.y) end
