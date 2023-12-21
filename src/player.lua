@@ -116,9 +116,7 @@ end
 function player:mousepressed(mx, my)
     if self.state == 'strike' then
         clock.during(0.5, function()
-            if self.state ~= 'strike' then
-                self:mousepressed(mx, my)
-            end
+            if self.state ~= 'strike' then self:mousepressed(mx, my) end
         end)
 
         return
@@ -126,14 +124,21 @@ function player:mousepressed(mx, my)
     
     self.state = 'strike'
 
-    clock.during(self.animations.strike_down.totalDuration - 0.005, function()
-        self:queryForEnemies(self:getStrikeVectors(mx, my))
-    end, function()
+    clock.script(function(wait)
+        local anim = self.animations.strike_down
+
+        wait(anim.intervals[2])
+
+        clock.during(anim.intervals[#anim.frames - 1] - anim.intervals[2] - 0.005, function()
+            self:queryForEnemies(self:getStrikeVectors(mx, my))
+        end)
+
+        wait(anim.totalDuration - anim.intervals[2] - 0.005)
+
         self.state = ''
         self.strike = false
     end)
 end
-
 
 function player:getStrikeVectors(mx, my)
     local vec2 = vector(self.x - mx, self.y - my)

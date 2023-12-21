@@ -108,6 +108,7 @@ function enemy:attack()
         if math.sqrt( dx*dx + dy*dy ) > 150 then return end
 
         local distanceFromPlayer = math.sqrt( dx*dx + dy*dy )
+        distanceFromPlayer = (math.abs(distanceFromPlayer) + self.attackAggro/2) * distanceFromPlayer / math.abs(distanceFromPlayer)
         spd = distanceFromPlayer / (intervals[frames] - intervals[4])
         angle = math.atan2(player.y - self.y, player.x - self.x)
         
