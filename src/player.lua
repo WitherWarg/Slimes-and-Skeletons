@@ -78,14 +78,8 @@ function player:update(dt)
 
     self:updateState(dx, dy)
 
-    if self.state == 'dead' then
-        if self.dir == 'up' then
-            self.dir = 'right'
-        elseif self.dir == 'down' then
-            self.dir = 'left'
-        end
-
-        if world then self:kill() end
+    if self.state == 'dead' and world then
+        self:kill()
     else
         local vx, vy = self:getVectors(0, 0)
         self:updateSpd(dt, vx, vy)
@@ -112,6 +106,7 @@ end
 function player:draw()
     self.animation:draw(self.spriteSheet, self.x, self.y, nil, player.scale, player.scale, self.frameWidth/2, self.frameHeight/2)
 end
+
 
 function player:mousepressed(mx, my)
     if self.state == 'strike' then
@@ -200,7 +195,13 @@ end
 function player:updateDir(dx, dy)
     dx, dy = dx / math.abs(dx), dy / math.abs(dy)
 
-    if self.state == 'strike' and not self.strike then
+    if self.state == 'dead' then
+        if self.dir == 'up' then
+            self.dir = 'right'
+        elseif self.dir == 'down' then
+            self.dir = 'left'
+        end
+    elseif self.state == 'strike' and not self.strike then
         self.strike = true
 
         if dx == 1 and dy == -1 then self.dir = 'down'
