@@ -99,7 +99,7 @@ function love.mousepressed(x, y, button, istouch, presses)
     if pause then return end
 
     if button == 1 then
-        player:mousepressed()
+        player:mousepressed(cam:mousePosition())
     end
 end
 

@@ -69,11 +69,11 @@ function player:spawn(x, y)
 end
 
 function player:update(dt)
-    local dx, dy = 0, 0
+    local dx, dy
     if self.state == 'strike' then
-        dx, dy = self:getStrikeVectors(dx, dy)
+        dx, dy = self:getStrikeVectors(cam:mousePosition())
     else
-        dx, dy = self:getVectors(dx, dy)
+        dx, dy = self:getVectors()
     end
 
     self:updateState(dx, dy)
@@ -113,14 +113,21 @@ function player:draw()
     self.animation:draw(self.spriteSheet, self.x, self.y, nil, player.scale, player.scale, self.frameWidth/2, self.frameHeight/2)
 end
 
-function player:mousepressed()
-    if self.state == 'strike' then return end
+function player:mousepressed(mx, my)
+    if self.state == 'strike' then
+        clock.during(0.5, function()
+            if self.state ~= 'strike' then
+                self:mousepressed(mx, my)
+            end
+        end)
+
+        return
+    end
     
     self.state = 'strike'
-    self.mx, self.my = love.mouse.getPosition()
 
     clock.during(self.animations.strike_down.totalDuration - 0.005, function()
-        self:queryForEnemies(self:getStrikeVectors())
+        self:queryForEnemies(self:getStrikeVectors(mx, my))
     end, function()
         self.state = ''
         self.strike = false
@@ -128,12 +135,8 @@ function player:mousepressed()
 end
 
 
-function player:getStrikeVectors(dx, dy)
-    local mx, my = cam:worldCoords(self.mx, self.my)
-
-    dx, dy = self.x - mx, self.y - my
-
-    local vec2 = vector(dx, dy)
+function player:getStrikeVectors(mx, my)
+    local vec2 = vector(self.x - mx, self.y - my)
     vec2:rotateInplace(math.pi / 4)
 
     return vec2:unpack()
@@ -162,6 +165,8 @@ function player:queryForEnemies(dx, dy)
 end
 
 function player:getVectors(dx, dy)
+    local dx, dy = 0, 0
+
     if love.keyboard.isDown('d') then dx = 1
     elseif love.keyboard.isDown('a') then dx = -1 end
     if love.keyboard.isDown('s') then dy = 1
