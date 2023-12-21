@@ -13,6 +13,7 @@ hsl = require('/src/functions/hsl')
 deathScreen = require('/src/functions/deathScreen')
 printTable = require('/src/functions/printTable')
 debug = require('/src/functions/debug')
+loadMapObjects = require('/src/functions/loadMapObjects')
 
 enemy = require('/src/enemies/enemy')
 slime = require('/src/enemies/slime')

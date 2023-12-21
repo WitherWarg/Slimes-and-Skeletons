@@ -8,16 +8,7 @@ function love.load()
     createCollisionClasses()
     FPS = nil
 
-    Demo = sti('/maps/levels/Demo.lua')
-    
-    local Player = Demo.layers["Player"].objects[1]
-    player:spawn(Player.x + Player.width/2, Player.y + Player.height/2)
-
-    for _, obj in pairs(Demo.layers["Walls"].objects) do
-        local wall = world:newBSGRectangleCollider(obj.x, obj.y, obj.width, obj.height, 10)
-        wall:setCollisionClass('Wall')
-        wall:setType('static')
-    end
+    loadMapObjects()
 
     cam = camera()
     cam:zoom(3)
@@ -111,7 +102,4 @@ function love.keypressed(key)
 
     if key == 'p' or key == 'escape' then pause = not pause end
     if pause then return end
-
-    if key == 'n' then slime(player.x + 200, player.y) end
-    if key == 'k' then skeleton(player.x + 200, player.y) end
 end
