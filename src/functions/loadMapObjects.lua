@@ -17,4 +17,4 @@ return function()
         wall:setCollisionClass('Wall')
         wall:setType('static')
     end
-ends
+end
