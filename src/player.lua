@@ -181,7 +181,7 @@ function player:getVectors(dx, dy)
 end
 
 function player:updateState(dx, dy)
-    if self.hp == 0 then
+    if self.hp <= 0 then
         self.state = 'dead'
     elseif self.state == 'strike' then
         self.state = 'strike'
