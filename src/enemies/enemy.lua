@@ -168,7 +168,7 @@ function enemy:dmg()
         self.clock:clear()
         self.hit = true
 
-        local s = 75 / self.maxHp
+        local s = 40 / self.maxHp
         self.collider:setLinearVelocity(0, 0)
 
         local dx, dy = 1, 1

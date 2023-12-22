@@ -6,7 +6,7 @@ local function new(x, y)
     local animations = {
         moving = { frames = '1-6', row = 2 },
         idle = { frames = '1-6', row = 1 },
-        die = { frames = '1-5', row = 5, animSpd = 0.5, onLoop = 'pauseAtEnd' },
+        die = { frames = '1-5', row = 5, animSpd = 0.25, onLoop = 'pauseAtEnd' },
         dmg = { frames = '1-3', row = 4},
         attack = { frames = '1-5', row = 3, animSpd = {['1-2']=0.5, ['3-5']=0.2} }
     }

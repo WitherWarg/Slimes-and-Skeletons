@@ -15,7 +15,7 @@ return function(...)
     end
 
     love.graphics.push()
-        local font = love.graphics.newFont(10 * SX)
+        local font = love.graphics.newFont(30)
         love.graphics.setFont(font)
         love.graphics.print( string.format( inputString, ... ), 10, 10 )
     love.graphics.pop()

@@ -6,13 +6,13 @@ function player:spawn(x, y)
     
     self.maxSpd = 130
     self.spd = 0
-    self.acceleration = self.maxSpd / (love.timer.getAverageDelta() * 0.5)
+    self.acceleration = self.maxSpd / 0.3
 
     self.width = 7 * self.scale
     self.height = 5 * self.scale
 
     self.hp = 100
-    self.maxHp = self.hp
+    self.maxHp, self.currentHp = self.hp, self.hp
 
     self.spriteSheet = love.graphics.newImage('/sprites/characters/player.png')
     self.frameWidth, self.frameHeight = self.spriteSheet:getWidth()/6, self.spriteSheet:getHeight()/10
@@ -107,7 +107,6 @@ function player:draw()
     self.animation:draw(self.spriteSheet, self.x, self.y, nil, player.scale, player.scale, self.frameWidth/2, self.frameHeight/2)
 end
 
-
 function player:mousepressed(mx, my)
     if self.state == 'strike' then
         clock.during(0.5, function()
@@ -134,6 +133,7 @@ function player:mousepressed(mx, my)
         self.strike = false
     end)
 end
+
 
 function player:getStrikeVectors(mx, my)
     local vec2 = vector(self.x - mx, self.y - my)
@@ -232,16 +232,18 @@ end
 
 function player:checkEnemyDmg()
     if self.collider:enter('Enemy') then
-        print('executing')
         local collision_data = self.collider:getEnterCollisionData('Enemy')
         
         local enemy = collision_data.collider:getObject()
         if not enemy.attacking then return end
 
         local dx, dy = collision_data.contact:getNormal()
-        local s = -1000
-        self.collider:applyLinearImpulse(dx * s, dy * s)
-        self.x, self.y = self.collider:getPosition()
+        local s = -50
+
+        clock.during(love.timer.getAverageDelta() * 10, function()
+            self.collider:applyLinearImpulse(dx * s, dy * s)
+            self.x, self.y = self.collider:getPosition()
+        end)
 
         self.hp = self.hp - enemy.maxHp * 5
     end

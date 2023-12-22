@@ -53,12 +53,6 @@ function love.draw()
     end
 
     cam:attach()
-        for key, value in pairs(Demo.layers) do
-            if type(key) == 'number' and value.type == 'tilelayer' then
-                value:draw()
-            end
-        end
-
         local entities = {}
         
         table.insert(entities, player)
@@ -66,6 +60,20 @@ function love.draw()
         for _, e in ipairs(skeleton) do table.insert(entities, e) end
 
         table.sort(entities, function(a, b) return a.y < b.y end)
+
+        for _, e in ipairs(entities) do
+            if e.state == 'dead' and e.animation.position == 1 then
+                love.graphics.translate(love.math.random(-0.2, 0.2), 0)
+                break
+            end
+        end
+
+        for key, value in pairs(Demo.layers) do
+            if type(key) == 'number' and value.type == 'tilelayer' then
+                value:draw()
+            end
+        end
+
         for _, e in ipairs(entities) do e:draw() end
     cam:detach()
 
