@@ -1,4 +1,36 @@
-return function()
+local game_over = {}
+
+function game_over:enter()
+    timer.clear()
+
+    for _, entity in ipairs( {slime, skeleton} ) do
+        for i=#entity, 1, -1 do
+            local e = entity[i]
+            e.timer:clear()
+            table.remove(entity, i)
+        end
+    end
+
+    world:destroy()
+    world = nil
+
+    if player.dir == 'up' then
+        player.dir = 'right'
+    elseif player.dir == 'down' then
+        player.dir = 'left'
+    end
+
+    player.animation = player:getAnimation()
+end
+
+function game_over:update(dt)
+    player.animation:update(dt)
+    cam:lookAt(player.x, player.y)
+end
+
+function game_over:draw()
+    cam:attach()
+
     local r, g, b, a = love.graphics.getColor()
 
     love.graphics.setColor(hsl(0, 100, 50, 50))
@@ -25,4 +57,20 @@ return function()
     end
 
     love.graphics.setColor(r, g, b, a)
+    
+    player:draw()
+
+    cam:detach()
 end
+
+function game_over:mousepressed()
+    game_over:keypressed()
+end
+
+function game_over:keypressed()
+    if player.animation.position == #player.animation.frames then
+        Gamestate.switch(demo_level)
+    end
+end
+
+return game_over

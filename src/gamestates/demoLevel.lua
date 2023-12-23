@@ -1,9 +1,10 @@
 local demo_level = {}
 
 function demo_level:enter()
-    world = windfield.newWorld(0, 0)
+    world = wf.newWorld(0, 0)
     world:setQueryDebugDrawing(true)
     createCollisionClasses()
+
     FPS = nil
 
     loadMapObjects()
@@ -21,14 +22,7 @@ end
 
 function demo_level:update(dt)
     if pause then return end
-    if player.state == 'dead' then
-        player.animation:update(dt)
-        cam:lookAt(player.x, player.y)
-        return
-    end
-    if FPS then
-        love.timer.sleep(1/FPS)
-    end
+    if FPS then love.timer.sleep(1/FPS) end
     
     world:update(dt)
     player:update(dt)
@@ -45,7 +39,15 @@ function demo_level:update(dt)
     cam.y = math.max(math.min( cam.y, h - HEIGHT/2 ), HEIGHT/2)
 end
 
-local function drawEntities()
+function demo_level:draw()
+    cam:attach()
+
+    for key, value in pairs(Demo.layers) do
+        if type(key) == 'number' and value.type == 'tilelayer' then
+            value:draw()
+        end
+    end
+
     local entities = {}
         
     table.insert(entities, player)
@@ -65,46 +67,24 @@ local function drawEntities()
 
         love.graphics.pop()
     end
-end
 
-function demo_level:draw()
-    if player.state == 'dead' then
-        cam:attach()
-            deathScreen()
-            player:draw()
-        cam:detach()
-
-        return
-    end
-
-    cam:attach()
-        for key, value in pairs(Demo.layers) do
-            if type(key) == 'number' and value.type == 'tilelayer' then
-                value:draw()
-            end
-        end
-
-        drawEntities()
     cam:detach()
 
     hud:attach()
-        local health_bar = love.graphics.newImage('/sprites/objects/hearts/health_bar/health_bar_decoration.png')
-        local health_level = love.graphics.newImage('/sprites/objects/hearts/health_bar/health_bar.png')
 
-        love.graphics.draw(health_bar, 10, 10)
+    local health_bar = love.graphics.newImage('/sprites/objects/hearts/health_bar/health_bar_decoration.png')
+    local health_level = love.graphics.newImage('/sprites/objects/hearts/health_bar/health_bar.png')
 
-        local width = player.hp / player.maxHp * health_level:getWidth()
-        local quad = love.graphics.newQuad(0, 0, width, health_level:getHeight(), health_level:getDimensions())
-        love.graphics.draw(health_level, quad, 24, 10)
+    love.graphics.draw(health_bar, 10, 10)
+
+    local width = player.hp / player.maxHp * health_level:getWidth()
+    local quad = love.graphics.newQuad(0, 0, width, health_level:getHeight(), health_level:getDimensions())
+    love.graphics.draw(health_level, quad, 24, 10)
+
     hud:detach()
 end
 
 function demo_level:mousepressed(x, y, button)
-    if player.state == 'dead' then
-        gameStart()
-        return
-    end
-
     if pause then return end
 
     if button == 1 then
@@ -113,13 +93,9 @@ function demo_level:mousepressed(x, y, button)
 end
 
 function demo_level:keypressed(key)
-    if player.state == 'dead' then
-        gameStart()
-        return
-    end
-
     if key == 'p' or key == 'escape' then pause = not pause end
-    if pause then return end
+
+    if key == 'k' then player.hp = 0 end
 end
 
 return demo_level

@@ -79,18 +79,19 @@ function player:update(dt)
     self:updateState(dx, dy)
 
     if self.state == 'dead' and world then
-        self:kill()
-    else
-        local vx, vy = self:getVectors(0, 0)
-        self:updateSpd(dt, vx, vy)
-
-        self.collider:setLinearVelocity(self.spd * vx, self.spd * vy)
-        self.x, self.y = self.collider:getPosition()
-
-        self:updateSpd(dt, vx, vy)
-
-        self:checkEnemyDmg()
+        Gamestate.switch(game_over)
+        return
     end
+
+    local vx, vy = self:getVectors(0, 0)
+    self:updateSpd(dt, vx, vy)
+
+    self.collider:setLinearVelocity(self.spd * vx, self.spd * vy)
+    self.x, self.y = self.collider:getPosition()
+
+    self:updateSpd(dt, vx, vy)
+
+    self:checkEnemyDmg()
 
     self:updateDir(dx, dy)
     self.animation = self:getAnimation()
@@ -195,13 +196,7 @@ end
 function player:updateDir(dx, dy)
     dx, dy = dx / math.abs(dx), dy / math.abs(dy)
 
-    if self.state == 'dead' then
-        if self.dir == 'up' then
-            self.dir = 'right'
-        elseif self.dir == 'down' then
-            self.dir = 'left'
-        end
-    elseif self.state == 'strike' and not self.strike then
+    if self.state == 'strike' and not self.strike then
         self.strike = true
 
         if dx == 1 and dy == -1 then self.dir = 'down'
@@ -247,15 +242,6 @@ function player:checkEnemyDmg()
 
         self.hp = self.hp - enemy.maxHp * 5
     end
-end
-
-function player:kill()
-    timer.clear()
-    for _, e in ipairs(slime) do e.timer:clear() end
-    for _, e in ipairs(skeleton) do e.timer:clear() end
-
-    world:destroy()
-    world = nil
 end
 
 return player

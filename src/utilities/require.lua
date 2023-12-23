@@ -1,26 +1,24 @@
-local folders = {
-    'libraries',
-    'src/functions',
-    'src/utilities',
-    'src/gamestates',
-    'src/entities',
-    'libraries/hump'
-}
+wf = require('/libraries/windfield')
+anim8 = require('/libraries/anim8')
+sti = require('/libraries/sti')
+camera = require('/libraries.hump.camera')
+timer = require('/libraries.hump.timer')
+flux = require('/libraries/flux')
+vector = require('/libraries.hump.vector')
+Gamestate = require('/libraries.hump.gamestate')
 
-for _, folder in ipairs(folders) do
-    local folder = '/' .. folder
-    local files = love.filesystem.getDirectoryItems(folder)
+createCollisionClasses = require('/src/utilities/collisionClasses')
+gameStart = require('/src/utilities/gameStart')
 
-    for _, file in ipairs(files) do
-        pcall(function()
-            local info = love.filesystem.getInfo(file)
-            local moduleName = file:match("(.+)%.lua$") 
+hsl = require('/src/functions/hsl')
+printTable = require('/src/functions/printTable')
+debug = require('/src/functions/debug')
+loadMapObjects = require('/src/functions/loadMapObjects')
 
-            if not moduleName then
-                moduleName = file
-            end
+demo_level = require('/src/gamestates/demoLevel')
+game_over = require('/src/gamestates/gameOver')
 
-            _G[moduleName] = require(folder .. '/' .. moduleName)
-        end)
-    end
-end
+enemy = require('/src/entities/enemy')
+slime = require('/src/entities/slime')
+skeleton = require('/src/entities/skeleton')
+player = require('/src/entities/player')
