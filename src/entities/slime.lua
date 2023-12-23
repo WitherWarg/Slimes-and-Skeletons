@@ -1,4 +1,4 @@
-slime = {}
+local slime = {}
 
 local function new(x, y)
     local statData = { x = x, y = y, aggro = 150, attackAggro = 50, hp = 2, spd = 50, width = 14, height = 11, parent = slime, positionInParent = #slime + 1 }

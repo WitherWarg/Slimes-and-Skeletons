@@ -1,4 +1,4 @@
-player = {}
+local player = {}
 
 function player:spawn(x, y)
     self.scale = 1.5
@@ -109,7 +109,7 @@ end
 
 function player:mousepressed(mx, my)
     if self.state == 'strike' then
-        clock.during(0.5, function()
+        timer.during(0.5, function()
             if self.state ~= 'strike' then self:mousepressed(mx, my) end
         end)
 
@@ -118,12 +118,12 @@ function player:mousepressed(mx, my)
     
     self.state = 'strike'
 
-    clock.script(function(wait)
+    timer.script(function(wait)
         local anim = self.animations.strike_down
 
         wait(anim.intervals[2])
 
-        clock.during(anim.intervals[#anim.frames - 1] - anim.intervals[2] - 0.005, function()
+        timer.during(anim.intervals[#anim.frames - 1] - anim.intervals[2] - 0.005, function()
             self:queryForEnemies(self:getStrikeVectors(mx, my))
         end)
 
@@ -240,7 +240,7 @@ function player:checkEnemyDmg()
         local dx, dy = collision_data.contact:getNormal()
         local s = -50
 
-        clock.during(love.timer.getAverageDelta() * 10, function()
+        timer.during(love.timer.getAverageDelta() * 10, function()
             self.collider:applyLinearImpulse(dx * s, dy * s)
             self.x, self.y = self.collider:getPosition()
         end)
@@ -250,9 +250,9 @@ function player:checkEnemyDmg()
 end
 
 function player:kill()
-    clock.clear()
-    for _, e in ipairs(slime) do e.clock:clear() end
-    for _, e in ipairs(skeleton) do e.clock:clear() end
+    timer.clear()
+    for _, e in ipairs(slime) do e.timer:clear() end
+    for _, e in ipairs(skeleton) do e.timer:clear() end
 
     world:destroy()
     world = nil

@@ -1,4 +1,4 @@
-enemy = {}
+local enemy = {}
 enemy.__index = enemy
 
 local function new(statData, spriteData, animations)
@@ -39,12 +39,12 @@ local function new(statData, spriteData, animations)
     self.dir = 'right'
     self.attackInterval = spriteData.attackInterval
     
-    self.clock = clock.new()
+    self.timer = timer.new()
     return self
 end
 
 function enemy:update(dt)
-    self.clock:update(dt)
+    self.timer:update(dt)
 
     if self.state ~= 'dead' then
         self.state = self:getState()
@@ -102,7 +102,7 @@ function enemy:attack()
     local frames = #self.animations.attack.frames + 1
     local attackTimer, angle, spd
 
-    local BeforeAttackTimer = self.clock:during(intervals[4], function()
+    local BeforeAttackTimer = self.timer:during(intervals[4], function()
         
         local dx, dy = self.x - player.x, self.y - player.y
         if math.sqrt( dx*dx + dy*dy ) > 150 then return end
@@ -122,7 +122,7 @@ function enemy:attack()
 
     end, function()
 
-        attackTimer = self.clock:during(intervals[frames] - intervals[4], function()
+        attackTimer = self.timer:during(intervals[frames] - intervals[4], function()
             self.collider:setLinearVelocity(spd * math.cos(angle), spd * math.sin(angle))
             self.x, self.y = self.collider:getPosition()
         end)
@@ -133,28 +133,28 @@ function enemy:attack()
         self.attacking = false
 
         self.notAttacking = true
-        clock.after(1.5, function()
+        timer.after(1.5, function()
             self.notAttacking = false
         end)
     end
 
-    attackVariables = clock.during(intervals[frames], function()
+    attackVariables = timer.during(intervals[frames], function()
         if self.currentState == 'dmg' then
             attackFunc()
-            clock.cancel(attackVariables)
+            timer.cancel(attackVariables)
         end
     end, attackFunc)
 
-    clock.during(intervals[frames], function()
+    timer.during(intervals[frames], function()
         if self.collider:enter('Player') then
             self.collider:setLinearVelocity(0, 0)
 
             self.attacking = false
-            clock.cancel(attackVariables)
+            timer.cancel(attackVariables)
             
             pcall(function()
-                self.clock:cancel(attackTimer)
-                self.clock:cancel(BeforeAttackTimer)
+                self.timer:cancel(attackTimer)
+                self.timer:cancel(BeforeAttackTimer)
             end)
             return
         end
@@ -165,7 +165,7 @@ end
 
 function enemy:dmg()
     if not self.hit then
-        self.clock:clear()
+        self.timer:clear()
         self.hit = true
 
         local s = 40 / self.maxHp
@@ -182,11 +182,11 @@ function enemy:dmg()
 
         self.hp = self.hp - 1
         
-        self.clock:during(self.animations.dmg.totalDuration, function()
+        self.timer:during(self.animations.dmg.totalDuration, function()
             self.x, self.y = self.collider:getPosition()
         end)
 
-        clock.after(self.animations.dmg.totalDuration, function()
+        timer.after(self.animations.dmg.totalDuration, function()
             self.hit = false
         end)
     end
@@ -198,7 +198,7 @@ function enemy:dead()
     if not self.collider:isDestroyed() then
         player.hp = math.min(player.hp + 5 * self.maxHp, player.maxHp)
         self.collider:destroy()
-        self.clock:clear()
+        self.timer:clear()
         flux.to(self, 7, {visibility = 0}):ease('cubicin')
     end
     

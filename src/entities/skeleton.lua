@@ -1,4 +1,4 @@
-skeleton = {}
+local skeleton = {}
 
 local function new(x, y)
     local statData = { x = x, y = y, aggro = 200, attackAggro = 70, hp = 4, spd = 75, width = 8, height = 4, parent = skeleton, positionInParent = #skeleton + 1 }

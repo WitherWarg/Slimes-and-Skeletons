@@ -1,21 +1,26 @@
-wf = require('/libraries/windfield')
-anim8 = require('/libraries/anim8')
-sti = require('/libraries/sti')
-camera = require('/libraries.hump.camera')
-clock = require('/libraries.hump.timer')
-flux = require('/libraries/flux')
-vector = require('/libraries.hump.vector')
+local folders = {
+    'libraries',
+    'src/functions',
+    'src/utilities',
+    'src/gamestates',
+    'src/entities',
+    'libraries/hump'
+}
 
-createCollisionClasses = require('/src/utilities/collisionClasses')
-gameStart = require('/src/utilities/gameStart')
+for _, folder in ipairs(folders) do
+    local folder = '/' .. folder
+    local files = love.filesystem.getDirectoryItems(folder)
 
-hsl = require('/src/functions/hsl')
-deathScreen = require('/src/functions/deathScreen')
-printTable = require('/src/functions/printTable')
-debug = require('/src/functions/debug')
-loadMapObjects = require('/src/functions/loadMapObjects')
+    for _, file in ipairs(files) do
+        pcall(function()
+            local info = love.filesystem.getInfo(file)
+            local moduleName = file:match("(.+)%.lua$") 
 
-enemy = require('/src/enemies/enemy')
-slime = require('/src/enemies/slime')
-skeleton = require('/src/enemies/skeleton')
-player = require('/src/player')
+            if not moduleName then
+                moduleName = file
+            end
+
+            _G[moduleName] = require(folder .. '/' .. moduleName)
+        end)
+    end
+end
