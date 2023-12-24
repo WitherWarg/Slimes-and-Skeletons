@@ -1,3 +1,18 @@
+local loadObject = function(layer)
+    for _, obj in ipairs(layer.objects) do
+        if layer.name:match("(.*)%.") == 'Entities' then
+            local objName = string.lower( layer.name:match("%.(.*)") )
+            local e = _G[objName]
+
+            e(obj.x + obj.width / 2, obj.y + obj.height / 2)
+        else
+            local wall = world:newBSGRectangleCollider(obj.x, obj.y, obj.width, obj.height, 10)
+            wall:setCollisionClass('Wall')
+            wall:setType('static')
+        end
+    end
+end
+
 local demo_level = {}
 
 function demo_level:enter()
@@ -7,7 +22,13 @@ function demo_level:enter()
 
     FPS = nil
 
-    loadMapObjects()
+    Demo = sti('/maps/levels/Demo.lua')
+    
+    for id, layer in pairs(Demo.layers) do
+        if type(id) == 'number' and layer.type == 'objectgroup' then
+            loadObject(layer)
+        end
+    end
 
     cam = camera()
     cam:zoom(3)
@@ -42,21 +63,21 @@ end
 function demo_level:draw()
     cam:attach()
 
-    for key, value in pairs(Demo.layers) do
-        if type(key) == 'number' and value.type == 'tilelayer' then
-            value:draw()
+    for id, layer in pairs(Demo.layers) do
+        if type(id) == 'number' and layer.type == 'tilelayer' then
+            layer:draw()
         end
     end
 
-    local entities = {}
+    local drawables = {}
         
-    table.insert(entities, player)
-    for _, e in ipairs(slime) do table.insert(entities, e) end
-    for _, e in ipairs(skeleton) do table.insert(entities, e) end
+    table.insert(drawables, player)
+    for _, e in ipairs(slime) do table.insert(drawables, e) end
+    for _, e in ipairs(skeleton) do table.insert(drawables, e) end
 
-    table.sort(entities, function(a, b) return a.y < b.y end)
+    table.sort(drawables, function(a, b) return a.y < b.y end)
 
-    for _, e in ipairs(entities) do
+    for _, e in ipairs(drawables) do
         love.graphics.push()
 
         if e.state == 'dead' and e.animation.timer < 0.4 then
@@ -94,8 +115,6 @@ end
 
 function demo_level:keypressed(key)
     if key == 'p' or key == 'escape' then pause = not pause end
-
-    if key == 'k' then player.hp = 0 end
 end
 
 return demo_level

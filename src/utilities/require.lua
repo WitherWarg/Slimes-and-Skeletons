@@ -13,7 +13,6 @@ gameStart = require('/src/utilities/gameStart')
 hsl = require('/src/functions/hsl')
 printTable = require('/src/functions/printTable')
 debug = require('/src/functions/debug')
-loadMapObjects = require('/src/functions/loadMapObjects')
 
 demo_level = require('/src/gamestates/demoLevel')
 game_over = require('/src/gamestates/gameOver')

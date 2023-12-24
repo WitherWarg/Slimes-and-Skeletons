@@ -1,6 +1,8 @@
 local player = {}
 
-function player:spawn(x, y)
+local function new(x, y)
+    local self = player
+
     self.scale = 1.5
     self.x, self.y = x or WIDTH/2, y or HEIGHT/2
     
@@ -244,4 +246,4 @@ function player:checkEnemyDmg()
     end
 end
 
-return player
+return setmetatable(player, { __call = function(_, ...) return new(...) end, new = new })
