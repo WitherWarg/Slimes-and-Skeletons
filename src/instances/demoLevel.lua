@@ -118,6 +118,8 @@ function demo_level:update(dt)
 end
 
 function demo_level:draw()
+    love.graphics.setColor(100, 100, 100)
+
     cam:attach()
         drawMapLayers(Demo.layers)
 

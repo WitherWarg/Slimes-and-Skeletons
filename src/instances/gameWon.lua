@@ -19,6 +19,8 @@ function game_won:update(dt)
 end
 
 function game_won:draw()
+    love.graphics.setColor(100, 100, 100)
+
     cam:attach()
     
     local r, g, b, a = love.graphics.getColor()

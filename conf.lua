@@ -3,5 +3,5 @@ function love.conf(t)
     t.window.highdpi = true
     t.window.fullscreen = true
     t.console = false
-    t.window.icon = '/Rise-to-the-Apex-logo.png'
+    t.window.icon = '/sprites/icon.png'
 end

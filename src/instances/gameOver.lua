@@ -30,6 +30,8 @@ function game_over:update(dt)
 end
 
 function game_over:draw()
+    love.graphics.setColor(100, 100, 100)
+
     cam:attach()
 
     local r, g, b, a = love.graphics.getColor()

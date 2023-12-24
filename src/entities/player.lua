@@ -87,10 +87,7 @@ function player:update(dt)
         state = game_won
     end
 
-    if state then
-        Gamestate.switch(state)
-        return
-    end
+    if state then return Gamestate.switch(state) end
 
     local vx, vy = self:getVectors(0, 0)
     self:updateSpd(dt, vx, vy)
