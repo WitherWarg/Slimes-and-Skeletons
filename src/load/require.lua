@@ -7,15 +7,14 @@ flux = require('/libraries/flux')
 vector = require('/libraries.hump.vector')
 Gamestate = require('/libraries.hump.gamestate')
 
-createCollisionClasses = require('/src/utilities/collisionClasses')
-gameStart = require('/src/utilities/gameStart')
+createCollisionClasses = require('/src/load/collisionClasses')
 
-hsl = require('/src/functions/hsl')
-printTable = require('/src/functions/printTable')
-debug = require('/src/functions/debug')
+hsl = require('/src/utilities/hsl')
+printTable = require('/src/utilities/printTable')
+debug = require('/src/utilities/debug')
 
-demo_level = require('/src/gamestates/demoLevel')
-game_over = require('/src/gamestates/gameOver')
+demo_level = require('/src/instances/demoLevel')
+game_over = require('/src/instances/gameOver')
 
 enemy = require('/src/entities/enemy')
 slime = require('/src/entities/slime')
