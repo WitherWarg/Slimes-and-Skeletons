@@ -54,6 +54,7 @@ function demo_level:update(dt)
     flux.update(dt)
     timer.update(dt)
 
+    cam.smoother = camera.smooth.damped(10)
     cam:lookAt(player.x, player.y)
     local w, h = Demo.tilewidth * Demo.width, Demo.tileheight * Demo.height
     cam.x = math.max(math.min( cam.x, w - WIDTH/2 ), WIDTH/2)
@@ -76,6 +77,27 @@ function demo_level:draw()
     for _, e in ipairs(skeleton) do table.insert(drawables, e) end
 
     table.sort(drawables, function(a, b) return a.y < b.y end)
+
+    for _, e in ipairs(drawables) do
+        local r, g, b, a = love.graphics.getColor()
+
+        local alpha = 0.5
+        if e.visibility then alpha = alpha * e.visibility / 100 end
+        love.graphics.setColor(0, 0, 0, alpha)
+
+        local angle = math.atan2( HEIGHT * 3/2 - e.y, -WIDTH / 2 - e.x ) - math.pi / 2
+        local offset = vector(0, 0)
+        if e.state == 'dead' then
+            offset = vector(3, 7):rotated(angle)
+            angle = nil
+        end
+
+        local ox, oy = e.frameWidth / 2 + offset.x, e.frameHeight / 2 + offset.y
+
+        e.animation:draw(e.spriteSheet, e.x, e.y, angle, player.scale / 1.5, player.scale, ox, oy)
+
+        love.graphics.setColor(r, g, b, a)
+    end
 
     for _, e in ipairs(drawables) do
         love.graphics.push()

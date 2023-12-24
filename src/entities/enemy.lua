@@ -46,20 +46,18 @@ end
 function enemy:update(dt)
     self.timer:update(dt)
 
-    if self.state ~= 'dead' then
-        self.state = self:getState()
-        
-        if self.state == 'idle' then
-            self.animation = self:idle()
-        elseif self.state == 'attack' then
-            self.animation = self:attack()
-        elseif self.state == 'moving' then
-            self.animation = self:moving()
-        elseif self.state == 'dmg' then
-            self.animation = self:dmg()
-        elseif self.state == 'dead' then
-            self.animation = self:dead()
-        end
+    self.state = self:getState()
+    
+    if self.state == 'idle' then
+        self.animation = self:idle()
+    elseif self.state == 'attack' then
+        self.animation = self:attack()
+    elseif self.state == 'moving' then
+        self.animation = self:moving()
+    elseif self.state == 'dmg' then
+        self.animation = self:dmg()
+    elseif self.state == 'dead' then
+        self.animation = self:dead()
     end
 
     if self.currentState ~= self.state and self.state ~= '' then
@@ -201,7 +199,7 @@ function enemy:dead()
         self.timer:clear()
         flux.to(self, 7, {visibility = 0}):ease('cubicin')
     end
-    
+
     if math.floor(self.visibility) == 0 then
         table.remove(self.parent, self.positionInParent)
     end
@@ -210,7 +208,7 @@ function enemy:dead()
 end
 
 function enemy:getState()
-    if self.hp == 0 or not world then
+    if self.hp <= 0 then
         return 'dead'
     end
 
