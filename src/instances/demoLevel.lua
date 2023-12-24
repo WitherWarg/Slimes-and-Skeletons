@@ -7,7 +7,7 @@ local loadObjects = function(layer)
             e(obj.x + obj.width / 2, obj.y + obj.height / 2)
         else
             local wall = world:newBSGRectangleCollider(obj.x, obj.y, obj.width, obj.height, 10)
-            wall:setCollisionClass('Wall')
+            wall:setCollisionClass(layer.name:match("%.(.*)"):gsub("s$", ""))
             wall:setType('static')
         end
     end

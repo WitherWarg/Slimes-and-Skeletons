@@ -80,8 +80,15 @@ function player:update(dt)
 
     self:updateState(dx, dy)
 
+    local state = nil
     if self.state == 'dead' and world then
-        Gamestate.switch(game_over)
+        state = game_over
+    elseif self.state == 'win' then
+        state = game_won
+    end
+
+    if state then
+        Gamestate.switch(state)
         return
     end
 
@@ -147,7 +154,7 @@ end
 
 function player:queryForEnemies(dx, dy)
     local triangleVectors = {
-        vector(0, 24),
+        vector(0, 27),
         vector(12, 0),
         vector(-12, 0)
     }
@@ -186,6 +193,8 @@ end
 function player:updateState(dx, dy)
     if self.hp <= 0 then
         self.state = 'dead'
+    elseif self.collider:enter('Door') then
+        self.state = 'win'
     elseif self.state == 'strike' then
         self.state = 'strike'
     elseif dx == 0 and dy == 0 then

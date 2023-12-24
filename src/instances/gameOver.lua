@@ -1,6 +1,7 @@
 local game_over = {}
 
-function game_over:enter()
+function game_over:enter(previous)
+    self.previous = previous
     timer.clear()
 
     for _, entity in ipairs( {slime, skeleton} ) do
@@ -69,7 +70,7 @@ end
 
 function game_over:keypressed()
     if player.animation.position == #player.animation.frames then
-        Gamestate.switch(demo_level)
+        Gamestate.switch(self.previous)
     end
 end
 

@@ -15,6 +15,7 @@ debug = require('/src/utilities/debug')
 
 demo_level = require('/src/instances/demoLevel')
 game_over = require('/src/instances/gameOver')
+game_won = require('/src/instances/gameWon')
 
 enemy = require('/src/entities/enemy')
 slime = require('/src/entities/slime')
