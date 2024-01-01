@@ -1,9 +1,9 @@
 wf = require('/libraries/windfield')
-anim8 = require('/libraries/anim8')
+anim8 = require('/libraries/anim8/anim8')
 sti = require('/libraries/sti')
 camera = require('/libraries.hump.camera')
 timer = require('/libraries.hump.timer')
-flux = require('/libraries/flux')
+flux = require('/libraries/flux/flux')
 vector = require('/libraries.hump.vector')
 Gamestate = require('/libraries.hump.gamestate')
 

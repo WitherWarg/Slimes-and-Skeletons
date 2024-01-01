@@ -7,7 +7,7 @@
 -- under the terms of the MIT license. See LICENSE for details.
 --
 
-local flux = { _version = "0.1.5" }
+local flux = { _version = "0.1.5", _url = "https://github.com/rxi/flux/blob/master/flux.lua" }
 flux.__index = flux
 
 flux.tweens = {}
