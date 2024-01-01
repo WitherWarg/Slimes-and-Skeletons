@@ -19,9 +19,11 @@ Finally, in order to run the game, visit the website linked below, then download
 
 ### Assets
 
+All assets' licenses are included with links to their repositories (You may have to search in multiple files for certain assets).
+
 #### Libraries
 
-All library folders are taken from open source repositories. All of their licenses are included with links to their repositories (You may have to search in multiple files for certain directories). They are all used in order to improve the ease of development and do not add any features that are present in SnS, but simply make the code cleaner.
+All folders inside of the library are used in order to improve the ease of development and do not add any features that are present in SnS, but simply make the code cleaner.
 
 For example, windfield is a physics module that takes the LÖVE2D's joints, fixtures and shapes into a single collider and world with easy to use functions. However, I am the one who needs to implement collision behavior, speed, shape and size. Then, I need to connect that behavior with what the player can see.
 

@@ -2,7 +2,7 @@ local skeleton = {}
 
 local function new(x, y)
     local statData = { x = x, y = y, aggro = 200, attackAggro = 70, hp = 4, spd = 75, width = 8, height = 4, parent = skeleton, positionInParent = #skeleton + 1 }
-    local spriteData = { path = '/sprites/characters/skeleton.png', rows = 6, columns = 5, colliderCut = 2, attackInterval = 3 }
+    local spriteData = { path = '/sprites/mystic_woods/sprites/characters/skeleton.png', rows = 6, columns = 5, colliderCut = 2, attackInterval = 3 }
     local animations = {
         moving = { frames = '1-6', row = 2 },
         idle = { frames = '1-6', row = 1 },

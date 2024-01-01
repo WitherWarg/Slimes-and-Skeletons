@@ -59,8 +59,8 @@ local draw = function(entities)
 end
 
 local drawPlayerHealth = function()
-    local health_bar = love.graphics.newImage('/sprites/objects/hearts/health_bar/health_bar_decoration.png')
-    local health_level = love.graphics.newImage('/sprites/objects/hearts/health_bar/health_bar.png')
+    local health_bar = love.graphics.newImage('/sprites/hearts/health_bar/health_bar_decoration.png')
+    local health_level = love.graphics.newImage('/sprites/hearts/health_bar/health_bar.png')
 
     love.graphics.draw(health_bar, 10, 10)
 

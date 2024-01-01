@@ -16,7 +16,7 @@ local function new(x, y)
     self.hp = 100
     self.maxHp, self.currentHp = self.hp, self.hp
 
-    self.spriteSheet = love.graphics.newImage('/sprites/characters/player.png')
+    self.spriteSheet = love.graphics.newImage('/sprites/mystic_woods/sprites/characters/player.png')
     self.frameWidth, self.frameHeight = self.spriteSheet:getWidth()/6, self.spriteSheet:getHeight()/10
     local g = anim8.newGrid(self.frameWidth, self.frameHeight, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
     
