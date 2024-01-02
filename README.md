@@ -15,7 +15,7 @@ My game is called slimes and skeletons, or SnS for short. It is composed a proto
 The controls are relatively simple:
 WASD to move;
 Mouse button to attack;
-The direction of the attack depends on your mouse, not your current direction;
+The direction of the attack depends on your mouse, not the current direction of the player;
 Finally, in order to run the game, visit the website linked below, then download, unzip and run the executable.
 <https://zulox.itch.io/sns>
 
