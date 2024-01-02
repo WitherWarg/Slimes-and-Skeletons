@@ -1,6 +1,8 @@
 # LÖVE 2D Game with Lua: SnS
 
-## Video Demo:  <URL HERE>
+## Video Demo:  TODO
+
+## About Me
 
 ## Description
 
@@ -29,4 +31,12 @@ For example, windfield is a physics module that takes the LÖVE2D's joints, fixt
 
 #### Art
 
-CS50 is a course about learning how to program. Because of this, and mostly because of my lackluster art skill, all art in this game. The only exception is the icon art background.
+CS50 is a course about learning how to program. Because of this, and mostly because of my lackluster skill, most of the art in this game was from [itch.io](https://itch.io/).
+
+The hearts pack I used was made by [VampireGirl](https://itch.io/profile/fliflifly). However, the pack is free and she did not leave a license.
+
+The main pack that I used, Mystic Woods, was made by [Game Endeavor]((https://game-endeavor.itch.io/)). He's a Youtube Creator who is currently posting developer logs for a game. His license has been included in the mystic woods folder which cost me $2.99.
+
+### Files
+
+TODO
