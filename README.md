@@ -2,13 +2,11 @@
 
 ## Video Demo:  TODO
 
-## About Me
-
 ## Description
 
 ### My Game
 
-My game is called slimes and skeletons, or SnS for short. It is composed a prototype game where you kill slimes and skeletons and your goal is to reach the house at the end of the path.
+My game is called slimes and skeletons, or SnS for short. It is a prototype game where you kill slimes and skeletons and your goal is to reach the house at the end of the path.
 
 ### Controls
 
@@ -41,7 +39,7 @@ The main pack that I used, Mystic Woods, was made by [Game Endeavor]((https://ga
 
 #### main.lua
 
-This simply loads the game's graphics, loads in all of the files using require.lua and switches to the level gamestate. A gamestate is a table with all the regular love callbacks. This helps me switch between level, pause and end screens for the game.
+This simply loads the game's graphics, loads in all of the files using require.lua and switches to the level game state. A game state is a table with all the regular love callbacks. This helps me switch between level, pause and end screens for the game.
 
 #### conf.lua
 
@@ -53,6 +51,14 @@ This contains the map data necessary for the sti (simple tiled implementation) l
 
 #### Source
 
-The source folder is made up of four directories. THe first one, entities, stores all the behavior and functions related to entities. The second one, instances, stores all gamestates. Thirdly, the load directory stores the files necessary to properly load the physics world as well as all of the files in the project. Finally, the utilities directory stores multiple useful functions such as a converter from hsl to rgb.
+The source folder is made up of four directories. THe first one, entities, stores all the behavior and functions related to entities. The second one, instances, stores all game states. Thirdly, the load directory stores the files necessary to properly load the physics world as well as all of the files in the project. Finally, the utilities directory stores multiple useful functions such as a converter from hsl to rgb.
 
 ##### Entities
+
+##### Instances
+
+##### Load
+
+##### Utilities
+
+## Conclusion
