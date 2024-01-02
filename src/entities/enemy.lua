@@ -70,12 +70,8 @@ function enemy:update(dt)
 end
 
 function enemy:draw()
-    local r, g, b, a = love.graphics.getColor()
-
     love.graphics.setColor(hsl(0, 0, 100, self.visibility))
     self.animation:draw(self.spriteSheet, self.x, self.y, nil, player.scale, player.scale, self.frameWidth/2, self.frameHeight/2)
-
-    love.graphics.setColor(r, g, b, a)
 end
 
 

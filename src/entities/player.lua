@@ -111,6 +111,7 @@ function player:update(dt)
 end
 
 function player:draw()
+    love.graphics.setColor(hsl(0, 0, 100))
     self.animation:draw(self.spriteSheet, self.x, self.y, nil, player.scale, player.scale, self.frameWidth/2, self.frameHeight/2)
 end
 

@@ -14,6 +14,8 @@ local loadObjects = function(layer)
 end
 
 local drawMapLayers = function(layers)
+    love.graphics.setColor(hsl(0, 0, 100))
+
     for id, layer in pairs(layers) do
         if type(id) == 'number' and layer.type == 'tilelayer' then
             layer:draw()
@@ -23,8 +25,6 @@ end
 
 local drawShadows = function(entities)
     for _, e in ipairs(entities) do
-        local r, g, b, a = love.graphics.getColor()
-
         local alpha = 0.5
         if e.visibility then alpha = alpha * e.visibility / 100 end
         love.graphics.setColor(0, 0, 0, alpha)
@@ -39,8 +39,6 @@ local drawShadows = function(entities)
         local ox, oy = e.frameWidth / 2 + offset.x, e.frameHeight / 2 + offset.y
 
         e.animation:draw(e.spriteSheet, e.x, e.y, angle, player.scale / 1.5, player.scale, ox, oy)
-
-        love.graphics.setColor(r, g, b, a)
     end
 end
 
@@ -59,6 +57,8 @@ local draw = function(entities)
 end
 
 local drawPlayerHealth = function()
+    love.graphics.setColor(hsl(0, 0, 100))
+
     local health_bar = love.graphics.newImage('/sprites/hearts/health_bar/health_bar_decoration.png')
     local health_level = love.graphics.newImage('/sprites/hearts/health_bar/health_bar.png')
 
@@ -118,8 +118,6 @@ function demo_level:update(dt)
 end
 
 function demo_level:draw()
-    love.graphics.setColor(100, 100, 100)
-
     cam:attach()
         drawMapLayers(Demo.layers)
 
