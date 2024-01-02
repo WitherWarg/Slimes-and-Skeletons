@@ -37,6 +37,22 @@ The hearts pack I used was made by [VampireGirl](https://itch.io/profile/fliflif
 
 The main pack that I used, Mystic Woods, was made by [Game Endeavor]((https://game-endeavor.itch.io/)). He's a Youtube Creator who is currently posting developer logs for a game. His license has been included in the mystic woods folder which cost me $2.99.
 
-### Files
+### Code
 
-TODO
+#### main.lua
+
+This simply loads the game's graphics, loads in all of the files using require.lua and switches to the level gamestate. A gamestate is a table with all the regular love callbacks. This helps me switch between level, pause and end screens for the game.
+
+#### conf.lua
+
+In the configuration file, I define the title, version, dimensions and other miscellaneous settings which you can find out more about on the LÖVE2D website <https://love2d.org/wiki/Config_Files>.
+
+#### Maps
+
+This contains the map data necessary for the sti (simple tiled implementation) library to read and load the map so that I can draw it as well as all colliders that need to be used for the walls.
+
+#### Source
+
+The source folder is made up of four directories. THe first one, entities, stores all the behavior and functions related to entities. The second one, instances, stores all gamestates. Thirdly, the load directory stores the files necessary to properly load the physics world as well as all of the files in the project. Finally, the utilities directory stores multiple useful functions such as a converter from hsl to rgb.
+
+##### Entities

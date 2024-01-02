@@ -85,16 +85,6 @@ function demo_level:enter()
             loadObjects(layer)
         end
     end
-
-    cam = camera()
-    cam:zoom(3)
-
-    WIDTH, HEIGHT = love.graphics.getDimensions()
-    WIDTH, HEIGHT = WIDTH / cam.scale, HEIGHT / cam.scale
-    
-    hud = camera()
-    hud:zoom(cam.scale)
-    hud:lookAt(WIDTH / 2, HEIGHT / 2)
 end
 
 function demo_level:update(dt)

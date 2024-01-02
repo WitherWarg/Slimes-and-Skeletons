@@ -1,13 +1,3 @@
-local drawMapLayers = function(layers)
-    love.graphics.setColor(hsl(0, 0, 100))
-
-    for id, layer in pairs(layers) do
-        if type(id) == 'number' and layer.type == 'tilelayer' then
-            layer:draw()
-        end
-    end
-end
-
 local drawText = function()
     love.graphics.push()
     love.graphics.translate(0, -25)
