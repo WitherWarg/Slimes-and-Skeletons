@@ -4,8 +4,6 @@
 
 ## Description
 
-### My Game
-
 My game is called slimes and skeletons, or SnS for short. It is a prototype game where you kill slimes and skeletons and your goal is to reach the house at the end of the path.
 
 ### Controls
@@ -45,7 +43,7 @@ This simply loads the game's graphics, loads in all of the files using require.l
 
 In the configuration file, I define the title, version, dimensions and other miscellaneous settings which you can find out more about on the LÖVE2D website <https://love2d.org/wiki/Config_Files>.
 
-#### Maps
+#### maps
 
 This contains the map data necessary for the sti (simple tiled implementation) library to read and load the map so that I can draw it as well as all colliders that need to be used for the walls.
 
