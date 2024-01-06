@@ -4,7 +4,7 @@ function love.load()
     require('/src/load/require')
 
     cam = camera()
-    cam:zoomTo(3)
+    cam:zoomTo(2.5)
 
     WIDTH, HEIGHT = love.graphics.getWidth() / cam.scale, love.graphics.getHeight() / cam.scale
     

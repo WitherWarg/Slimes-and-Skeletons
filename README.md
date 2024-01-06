@@ -53,6 +53,18 @@ The source folder is made up of four directories. THe first one, entities, store
 
 ##### Entities
 
+The entities folder is made up of four files: enemy.lua, player.lua, skeleton.lua, and slime.lua. The enemy file defines the general behavior for an enemy based on their stats. The player file defines the player's behavior. The slime and skeleton files contain functions which define the stats that will be used as input for the enemy initialization function.
+
+###### Enemy
+
+The enemy.lua file is made up of 11 functions and returns the enemy table with it's meta table's _call property, which defines what happens when you call the table as a function, being set to the new function. I also include the new function itself for flexibility purposes.
+
+The new function takes three arguments, the enemies statData, spriteData and animations. It initializes an enemy's stats, animations, collider, direction, the interval between attacks and its timer instance, which keeps track of all timer related to that enemy.
+
+The update function runs on every frame and takes delta time, the time between each frame, as it's argument. First, it updates the enemy's timer instance, then it gets the current state of the enemy (attack, move, dmg, etc.) in order to determine what it should do. It then calls the function that handles the specific state, which also returns the current animation for that state. Afterwards, it checks if the current state is different from the new state. If so, it updates the current state and resets the new animation's frame. Finally, it updates the animation and its orientation.
+
+The draw function simply draws the current animation by providing the enemy's position and origin point which is the center of the enemy.
+
 ##### Instances
 
 ##### Load
