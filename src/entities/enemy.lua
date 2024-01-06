@@ -237,12 +237,6 @@ function enemy:getState()
     return 'idle'
 end
 
-function enemy:isOnScreen()
-    local boolX = cam.x - WIDTH / 2 < self.x and self.x < cam.x + WIDTH / 2
-    local boolY = cam.y - HEIGHT / 2 < self.y and self.y < cam.y + HEIGHT / 2
-    return boolX and boolY
-end
-
 function enemy:setAnimationOrientation()
     if self.dir == 'right' and self.animation.flippedH or self.dir == 'left' and not self.animation.flippedH then
         self.animation:flipH()            

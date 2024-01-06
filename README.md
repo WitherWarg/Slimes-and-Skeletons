@@ -63,7 +63,13 @@ The new function takes three arguments, the enemies statData, spriteData and ani
 
 The update function runs on every frame and takes delta time, the time between each frame, as it's argument. First, it updates the enemy's timer instance, then it gets the current state of the enemy (attack, move, dmg, etc.) in order to determine what it should do. It then calls the function that handles the specific state, which also returns the current animation for that state. Afterwards, it checks if the current state is different from the new state. If so, it updates the current state and resets the new animation's frame. Finally, it updates the animation and its orientation.
 
-The draw function simply draws the current animation by providing the enemy's position and origin point which is the center of the enemy.
+The draw function simply draws the current animation by providing the enemy's position and origin point (from where it is drawn).
+
+The idle function is simple as well. It simply sets the enemy's velocity to zero, then it returns the idle animation.
+
+The move function is a bit more complicated. First, I calculate the angle (in radians) between the player and the enemy. Then, we set the linear velocity of the enemy by using its speed and multiplying by the direction vectors determined by the cosine and sine of the angle. Then, we update the enemy's position and return the moving animation.
+
+The attack function is probably one of the more complex functions of the project. It starts by setting the attacking variable to true. Then, it initializes some variables, gets the intervals of time for each frame, the total number of frames plus one (the intervals table starts at zero seconds, so the first element in the table doesn't represent the first frame). Next, I initialize a timer
 
 ##### Instances
 
