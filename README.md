@@ -53,23 +53,25 @@ The source folder is made up of four directories. THe first one, entities, store
 
 ##### Entities
 
-The entities folder is made up of four files: enemy.lua, player.lua, skeleton.lua, and slime.lua. The enemy file defines the general behavior for an enemy based on their stats. The player file defines the player's behavior. The slime and skeleton files contain functions which define the stats that will be used as input for the enemy initialization function.
+The entities folder is made up of four files: enemy.lua, player.lua, skeleton.lua, and slime.lua. The enemy file defines the general behavior for an enemy based on their stats. The player file defines the player's behavior. The slime and skeleton files contain functions which define the stats that will be used as input for the enemy initialization function. In order to keep this text from blowing out of proportion, I will be only covering the three main functions of each file. You may consult the documentation for all of my libraries at your discretion.
 
 ###### Enemy
 
-The enemy.lua file is made up of 11 functions and returns the enemy table with it's meta table's _call property, which defines what happens when you call the table as a function, being set to the new function. I also include the new function itself for flexibility purposes.
+The enemy.lua file is made up of 11 functions and returns the enemy table with it's meta table's __call property, which defines what happens when you call the table as a function, being set to the new function. I also include the new function itself for flexibility purposes.
 
 The new function takes three arguments, the enemies statData, spriteData and animations. It initializes an enemy's stats, animations, collider, direction, the interval between attacks and its timer instance, which keeps track of all timer related to that enemy.
 
 The update function runs on every frame and takes delta time, the time between each frame, as it's argument. First, it updates the enemy's timer instance, then it gets the current state of the enemy (attack, move, dmg, etc.) in order to determine what it should do. It then calls the function that handles the specific state, which also returns the current animation for that state. Afterwards, it checks if the current state is different from the new state. If so, it updates the current state and resets the new animation's frame. Finally, it updates the animation and its orientation.
 
-The draw function simply draws the current animation by providing the enemy's position and origin point (from where it is drawn).
+The draw function simply draws the current animation by providing the enemy's position, scale and origin point (from where it is drawn).
 
-The idle function is simple as well. It simply sets the enemy's velocity to zero, then it returns the idle animation.
+###### Player
 
-The move function is a bit more complicated. First, I calculate the angle (in radians) between the player and the enemy. Then, we set the linear velocity of the enemy by using its speed and multiplying by the direction vectors determined by the cosine and sine of the angle. Then, we update the enemy's position and return the moving animation.
+The player.lua file is composed of 12 functions and returns the player table with the same __call property as the enemy table. It defines the player's behavior.
 
-The attack function is probably one of the more complex functions of the project. It starts by setting the attacking variable to true. Then, it initializes some variables, gets the intervals of time for each frame, the total number of frames plus one (the intervals table starts at zero seconds, so the first element in the table doesn't represent the first frame). Next, I initialize a timer
+The new function takes 2 arguments, the x and y values for the player. Just like for enemies, this function initializes all of the player's important properties. One difference is that the player has an acceleration to make his movement smoother and has 4 directional animations instead of them being two directional.
+
+The update function takes 1 argument, delta time and it runs every frame. It starts by initializing the directional vectors dx an dy of the player. Then, depending on the current state of the player, it assigns the appropriate values to those vectors. Afterwards, it updates the state of the player with those vectors. It then checks for either end state (over or win) and if one of them is true, then a switch is triggered.
 
 ##### Instances
 
